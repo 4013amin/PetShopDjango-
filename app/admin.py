@@ -6,3 +6,8 @@ from .models import Product, Category
 @admin.register(Product)
 class PostAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'description', 'price', 'stock')
+
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
