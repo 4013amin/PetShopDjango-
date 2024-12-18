@@ -41,3 +41,8 @@ class ProductImage(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['product'], name='unique_product_images')
         ]
+
+
+class Users(models.Model):
+    phone = models.CharField(max_length=12)
+    password = models.CharField(max_length=20)
