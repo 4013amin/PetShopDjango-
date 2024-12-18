@@ -15,6 +15,13 @@ class GetProductsView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class GetProductByIdView(APIView):
+    def get(self, request, pk):
+        product = Product.objects.get(pk=pk)
+        serializer = ProductSerializer(product)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class GetCategoriesView(APIView):
     def get(self, request):
         categories = Category.objects.all()
