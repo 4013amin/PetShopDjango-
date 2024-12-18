@@ -21,7 +21,6 @@ class GetProductByIdView(APIView):
         serializer = ProductSerializer(product)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
 class GetCategoriesView(APIView):
     def get(self, request):
         categories = Category.objects.all()
