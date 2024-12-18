@@ -5,7 +5,7 @@ from .models import Product, Category
 # Register your models here.
 @admin.register(Product)
 class PostAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'description', 'price', 'stock')
+    list_display = ('id', 'name', 'description', 'price')
 
 
 @admin.register(Category)
