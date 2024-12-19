@@ -9,4 +9,4 @@ urlpatterns = [
                   path('GetCategories/', GetCategoriesView.as_view()),
                   path('registerUser/', AddProfile.as_view()),
                   path('AddProduct/', AddProductView.as_view()),
-              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) 
