@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Category,Users
+from .models import Product, Category, Users
 
 
 # Register your models here.
@@ -11,6 +11,7 @@ class PostAdmin(admin.ModelAdmin):
 @admin.register(Users)
 class profileUsers(admin.ModelAdmin):
     list_display = ('phone', 'password')
+
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
