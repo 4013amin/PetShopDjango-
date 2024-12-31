@@ -6,6 +6,9 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from app.models import Product, Category, Favorite
 from app.serializers import ProductSerializer, CategorySerializer, UsersSerializer, FavoriteSerializer
 from rest_framework.permissions import IsAuthenticated
+import random
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 
 # Create your views here.
@@ -115,3 +118,49 @@ class GetFavoritesView(APIView):
         favorites = Favorite.objects.filter(user=request.user)
         serializer = FavoriteSerializer(favorites, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+#OPT
+# برای تولید کد تصادفی 5 رقمی
+def generate_otp():
+    return random.randint(10000, 99999)
+
+@csrf_exempt
+def send_otp(request):
+    if request.method == 'POST':
+        phone_number = request.POST.get('phone')
+        if phone_number:
+            otp = generate_otp()  # تولید کد تصادفی ۵ رقمی
+            # ارسال OTP به شماره تلفن (برای ارسال پیامک باید از یک سرویس پیامکی مثل Twilio استفاده کنید)
+            # send_sms(phone_number, otp)  # مثال فرضی برای ارسال پیامک
+            print(f"OTP for {phone_number}: {otp}")  # در اینجا فقط نمایش داده می‌شود، در پروژه واقعی باید ارسال شود
+
+            # برای امنیت بیشتر، OTP را در دیتابیس یا session ذخیره کنید (مثلاً در جلسه کاربری)
+            request.session['otp'] = otp
+
+            return JsonResponse({'message': 'OTP sent successfully'}, status=200)
+        else:
+            return JsonResponse({'error': 'Phone number is required'}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+    
+@csrf_exempt
+def verify_otp(request):
+    if request.method == 'POST':
+        phone_number = request.POST.get('phone')
+        entered_otp = request.POST.get('otp')
+
+        if not phone_number or not entered_otp:
+            return JsonResponse({'error': 'Phone number or OTP is missing'}, status=400)
+
+        # بررسی وجود OTP در session
+        stored_otp = request.session.get('otp')
+
+        if entered_otp == str(stored_otp):
+            return JsonResponse({'message': 'OTP verified successfully'}, status=200)
+        else:
+            return JsonResponse({'error': 'Invalid OTP'}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
