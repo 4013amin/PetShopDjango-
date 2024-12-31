@@ -15,6 +15,6 @@ urlpatterns = [
                   path('favorites/', GetFavoritesView.as_view(), name='get_favorites'),
 
                   path('send-otp/', send_otp, name='send_otp'),
-                  path('verify-otp/', verify_otp, name='verify_otp'),
+                 path('verify-otp/', verify_otp, name='verify_otp'),
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
