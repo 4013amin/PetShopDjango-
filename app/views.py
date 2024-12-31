@@ -3,12 +3,17 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
-from app.models import Product, Category, Favorite
+from app.models import Product, Category, Favorite, OTP
 from app.serializers import ProductSerializer, CategorySerializer, UsersSerializer, FavoriteSerializer
 from rest_framework.permissions import IsAuthenticated
 import random
+import time
+from datetime import datetime, timedelta
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # Create your views here.
@@ -120,47 +125,74 @@ class GetFavoritesView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-#OPT
-# برای تولید کد تصادفی 5 رقمی
+# زمان انقضا OTP (5 دقیقه)
+OTP_EXPIRATION_TIME = 5 * 60  # 5 دقیقه بر حسب ثانیه
+
+
 def generate_otp():
     return random.randint(10000, 99999)
+
 
 @csrf_exempt
 def send_otp(request):
     if request.method == 'POST':
         phone_number = request.POST.get('phone')
         if phone_number:
-            otp = generate_otp()  # تولید کد تصادفی ۵ رقمی
-            # ارسال OTP به شماره تلفن (برای ارسال پیامک باید از یک سرویس پیامکی مثل Twilio استفاده کنید)
-            # send_sms(phone_number, otp)  # مثال فرضی برای ارسال پیامک
-            print(f"OTP for {phone_number}: {otp}")  # در اینجا فقط نمایش داده می‌شود، در پروژه واقعی باید ارسال شود
+            otp = generate_otp()  # تولید OTP
+            otp_sent_time = time.time()  # زمان ارسال OTP
 
-            # برای امنیت بیشتر، OTP را در دیتابیس یا session ذخیره کنید (مثلاً در جلسه کاربری)
-            request.session['otp'] = otp
+            # ذخیره OTP و زمان ارسال در پایگاه داده
+            otp_record = OTP.objects.create(
+                phone=phone_number,
+                otp=otp,
+                created_at=otp_sent_time
+            )
+
+            # ارسال OTP به شماره تلفن (با استفاده از سرویس‌های ارسال پیامک)
+            print(f"OTP for {phone_number}: {otp}")  # در اینجا فقط نمایش داده می‌شود
 
             return JsonResponse({'message': 'OTP sent successfully'}, status=200)
         else:
             return JsonResponse({'error': 'Phone number is required'}, status=400)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
-    
-    
+
+
+# تنظیمات لاگینگ
+logging.basicConfig(level=logging.DEBUG)
+
+# زمان انقضا OTP (5 دقیقه)
+OTP_EXPIRATION_TIME = 5 * 60  # 5 دقیقه بر حسب ثانیه
+
+
 @csrf_exempt
 def verify_otp(request):
     if request.method == 'POST':
-        phone_number = request.POST.get('phone')
+        phone = request.POST.get('phone')
         entered_otp = request.POST.get('otp')
 
-        if not phone_number or not entered_otp:
+        logger.debug(f"Received phone: {phone}, OTP: {entered_otp}")
+
+        if not phone or not entered_otp:
             return JsonResponse({'error': 'Phone number or OTP is missing'}, status=400)
 
-        # بررسی وجود OTP در session
-        stored_otp = request.session.get('otp')
+        try:
+            otp_record = OTP.objects.get(phone=phone)
+            logger.debug(f"Found OTP record for phone: {phone}, OTP: {otp_record.otp}")
+        except OTP.DoesNotExist:
+            logger.error(f"OTP record not found for phone: {phone}")
+            return JsonResponse({'error': 'OTP session has expired or is invalid. Please request a new OTP.'},
+                                status=400)
 
-        if entered_otp == str(stored_otp):
+        otp_sent_time = otp_record.created_at
+        current_time = time.time()
+
+        if current_time - otp_sent_time > OTP_EXPIRATION_TIME:
+            return JsonResponse({'error': 'OTP has expired. Please request a new OTP.'}, status=400)
+
+        if entered_otp == str(otp_record.otp):
             return JsonResponse({'message': 'OTP verified successfully'}, status=200)
         else:
-            return JsonResponse({'error': 'Invalid OTP'}, status=400)
+            return JsonResponse({'error': 'Invalid OTP or phone number. Please check and try again.'}, status=400)
     else:
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
-
+        return JsonResponse({'error': 'Invalid request method. Only POST is allowed.'}, status=405)

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Category, Users
+from .models import Product, Category, Users ,OTP
 
 
 # Register your models here.
@@ -11,6 +11,11 @@ class PostAdmin(admin.ModelAdmin):
 @admin.register(Users)
 class profileUsers(admin.ModelAdmin):
     list_display = ('phone', 'password')
+
+
+@admin.register(OTP)
+class OPTAdmin(admin.ModelAdmin):
+    list_display = ('phone', 'otp')
 
 
 @admin.register(Category)

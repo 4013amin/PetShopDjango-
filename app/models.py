@@ -58,3 +58,9 @@ class Favorite(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.product}"
+
+
+class OTP(models.Model):
+    phone = models.CharField(max_length=15)
+    otp = models.CharField(max_length=6)
+    created_at = models.FloatField()
