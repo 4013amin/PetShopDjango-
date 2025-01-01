@@ -2,15 +2,11 @@ from django.shortcuts import render, redirect
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.parsers import MultiPartParser, FormParser
 from app.models import Product, Category, Favorite, OTP
 from app.serializers import ProductSerializer, CategorySerializer, UsersSerializer, FavoriteSerializer
 from rest_framework.permissions import IsAuthenticated
 import random
-import re
-import time
-from django.utils.timezone import now
-from datetime import datetime, timedelta
+from .models import OTP
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import logging
@@ -127,8 +123,67 @@ class GetFavoritesView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# زمان انقضا OTP (5 دقیقه)
-OTP_EXPIRATION_TIME = 5 * 60  # 5 دقیقه بر حسب ثانیه
+# # زمان انقضا OTP (5 دقیقه)
+# OTP_EXPIRATION_TIME = 5 * 60  # 5 دقیقه بر حسب ثانیه
+#
+#
+# def generate_otp():
+#     return random.randint(10000, 99999)
+#
+#
+# @csrf_exempt
+# def send_otp(request):
+#     if request.method == 'POST':
+#         phone_number = request.POST.get('phone')
+#         if not phone_number:
+#             return JsonResponse({'status': 'error', 'message': 'Phone number is required.'}, status=400)
+#
+#         otp = generate_otp()
+#
+#         OTP.objects.create(phone=phone_number, otp=otp, is_valid=True)
+#
+#         print(f"OTP for {phone_number}: {otp}")
+#
+#         return JsonResponse({'status': 'success', 'message': 'OTP sent successfully.'}, status=200)
+#
+#     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
+#
+# @csrf_exempt
+# def verify_otp(request):
+#     if request.method == 'POST':
+#         phone = request.POST.get('phone')
+#         otp_code = request.POST.get('otp')
+#
+#         if not phone or not otp_code:
+#             return JsonResponse({'status': 'error', 'message': 'Phone and OTP are required.'}, status=400)
+#
+#         # حذف فضاهای اضافی
+#         phone = phone.strip()
+#         otp_code = otp_code.strip()
+#
+#         try:
+#             otp_instance = OTP.objects.filter(phone=phone, is_valid=True).order_by('-id').first()
+#             if not otp_instance:
+#                 return JsonResponse({'status': 'error', 'message': 'Invalid or expired OTP.'}, status=400)
+#
+#             # بررسی صحت OTP
+#             if str(otp_instance.otp) == str(otp_code):
+#                 # پس از تأیید، اعتبار OTP را غیرفعال کنید
+#                 otp_instance.is_valid = False
+#                 otp_instance.save()
+#
+#                 return JsonResponse({'status': 'success', 'message': 'OTP verified successfully.'}, status=200)
+#             else:
+#                 return JsonResponse({'status': 'error', 'message': 'Invalid OTP.'}, status=400)
+#
+#         except Exception as e:
+#             print(f"Error: {e}")
+#             return JsonResponse({'status': 'error', 'message': 'An error occurred.'}, status=500)
+#
+#     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
+
+
+OTP_EXPIRATION_TIME = 5 * 60
 
 
 def generate_otp():
@@ -144,47 +199,39 @@ def send_otp(request):
 
         otp = generate_otp()
 
-        # ذخیره OTP با مقدار اولیه is_valid=True
         OTP.objects.create(phone=phone_number, otp=otp, is_valid=True)
 
-        print(f"OTP for {phone_number}: {otp}")  # برای تست
+        print(f"OTP for {phone_number}: {otp}")
 
         return JsonResponse({'status': 'success', 'message': 'OTP sent successfully.'}, status=200)
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
 
+
 @csrf_exempt
 def verify_otp(request):
     if request.method == 'POST':
         phone = request.POST.get('phone')
-        otp_code = request.POST.get('otp')
+        otp = request.POST.get('otp')
 
-        if not phone or not otp_code:
-            return JsonResponse({'status': 'error', 'message': 'Phone and OTP are required.'}, status=400)
-
-        # حذف فضاهای اضافی
-        phone = phone.strip()
-        otp_code = otp_code.strip()
+        if not phone or not otp:
+            return JsonResponse({'error': 'Phone number and OTP are required'}, status=400)
 
         try:
-            otp_instance = OTP.objects.filter(phone=phone, is_valid=True).order_by('-id').first()
-            if not otp_instance:
-                return JsonResponse({'status': 'error', 'message': 'Invalid or expired OTP.'}, status=400)
+            # Log the values to verify
+            print(f"Verifying OTP for phone: {phone}, OTP: {otp}")
 
-            # بررسی صحت OTP
-            if str(otp_instance.otp) == str(otp_code):
-                # پس از تأیید، اعتبار OTP را غیرفعال کنید
-                otp_instance.is_valid = False
-                otp_instance.save()
+            # Get OTP entry for verification
+            otp_entry = OTP.objects.get(phone=phone, otp=otp, is_valid=True)
 
-                return JsonResponse({'status': 'success', 'message': 'OTP verified successfully.'}, status=200)
+            if otp_entry.is_valid:
+                otp_entry.is_verified = True
+                otp_entry.save()
+                return JsonResponse({'message': 'OTP verified successfully!'})
             else:
-                return JsonResponse({'status': 'error', 'message': 'Invalid OTP.'}, status=400)
+                return JsonResponse({'error': 'OTP is expired'}, status=400)
 
-        except Exception as e:
-            print(f"Error: {e}")
-            return JsonResponse({'status': 'error', 'message': 'An error occurred.'}, status=500)
+        except OTP.DoesNotExist:
+            return JsonResponse({'error': 'Invalid OTP or phone number'}, status=400)
 
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
-
-    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
