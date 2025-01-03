@@ -183,13 +183,9 @@ class GetFavoritesView(APIView):
 #     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
 
 
-OTP_EXPIRATION_TIME = 5 * 60
-
-
+OTP_EXPIRATION_TIME = 2 * 60
 def generate_otp():
     return random.randint(10000, 99999)
-
-
 @csrf_exempt
 def send_otp(request):
     if request.method == 'POST':
@@ -218,10 +214,8 @@ def verify_otp(request):
             return JsonResponse({'error': 'Phone number and OTP are required'}, status=400)
 
         try:
-            # Log the values to verify
             print(f"Verifying OTP for phone: {phone}, OTP: {otp}")
 
-            # Get OTP entry for verification
             otp_entry = OTP.objects.get(phone=phone, otp=otp, is_valid=True)
 
             if otp_entry.is_valid:
