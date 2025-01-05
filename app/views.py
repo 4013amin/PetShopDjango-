@@ -123,69 +123,13 @@ class GetFavoritesView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# # زمان انقضا OTP (5 دقیقه)
-# OTP_EXPIRATION_TIME = 5 * 60  # 5 دقیقه بر حسب ثانیه
-#
-#
-# def generate_otp():
-#     return random.randint(10000, 99999)
-#
-#
-# @csrf_exempt
-# def send_otp(request):
-#     if request.method == 'POST':
-#         phone_number = request.POST.get('phone')
-#         if not phone_number:
-#             return JsonResponse({'status': 'error', 'message': 'Phone number is required.'}, status=400)
-#
-#         otp = generate_otp()
-#
-#         OTP.objects.create(phone=phone_number, otp=otp, is_valid=True)
-#
-#         print(f"OTP for {phone_number}: {otp}")
-#
-#         return JsonResponse({'status': 'success', 'message': 'OTP sent successfully.'}, status=200)
-#
-#     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
-#
-# @csrf_exempt
-# def verify_otp(request):
-#     if request.method == 'POST':
-#         phone = request.POST.get('phone')
-#         otp_code = request.POST.get('otp')
-#
-#         if not phone or not otp_code:
-#             return JsonResponse({'status': 'error', 'message': 'Phone and OTP are required.'}, status=400)
-#
-#         # حذف فضاهای اضافی
-#         phone = phone.strip()
-#         otp_code = otp_code.strip()
-#
-#         try:
-#             otp_instance = OTP.objects.filter(phone=phone, is_valid=True).order_by('-id').first()
-#             if not otp_instance:
-#                 return JsonResponse({'status': 'error', 'message': 'Invalid or expired OTP.'}, status=400)
-#
-#             # بررسی صحت OTP
-#             if str(otp_instance.otp) == str(otp_code):
-#                 # پس از تأیید، اعتبار OTP را غیرفعال کنید
-#                 otp_instance.is_valid = False
-#                 otp_instance.save()
-#
-#                 return JsonResponse({'status': 'success', 'message': 'OTP verified successfully.'}, status=200)
-#             else:
-#                 return JsonResponse({'status': 'error', 'message': 'Invalid OTP.'}, status=400)
-#
-#         except Exception as e:
-#             print(f"Error: {e}")
-#             return JsonResponse({'status': 'error', 'message': 'An error occurred.'}, status=500)
-#
-#     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
-
-
 OTP_EXPIRATION_TIME = 2 * 60
+
+
 def generate_otp():
     return random.randint(10000, 99999)
+
+
 @csrf_exempt
 def send_otp(request):
     if request.method == 'POST':
