@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from app.models import Product, Category, Favorite, OTP
+from app.models import Product, Category, Favorite, OTP , ProductImage
 from app.serializers import ProductSerializer, CategorySerializer, UsersSerializer, FavoriteSerializer
 from rest_framework.permissions import IsAuthenticated
 import random
@@ -68,8 +68,12 @@ class AddProductView(APIView):
     def post(self, request):
         print(request.data)
         serializer = ProductSerializer(data=request.data)
+
         if serializer.is_valid():
-            serializer.save()
+            product = serializer.save()
+            images = request.FILES.getlist('images')
+            for image in images:
+                ProductImage.objects.create(product=product, image=image)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
