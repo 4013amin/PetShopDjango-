@@ -23,7 +23,7 @@ class Product(models.Model):
     city = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
     family = models.CharField(max_length=255)
-    image = models.ImageField(upload_to='products/images/')
+    image = models.ImageField(upload_to='products/images/', blank=True, null=True)  # فیلد اختیاری
     price = models.PositiveIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -40,10 +40,8 @@ class ProductImage(models.Model):
     def __str__(self):
         return f"Image for {self.product.name}"
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['product'], name='unique_product_images')
-        ]
+
+
 
 
 class Users(models.Model):

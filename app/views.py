@@ -22,6 +22,7 @@ class GetProductsView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+
 class GetProductByIdView(APIView):
     def get(self, request, pk):
         product = Product.objects.get(pk=pk)
@@ -66,17 +67,31 @@ class GetCategoriesView(APIView):
 
 class AddProductView(APIView):
     def post(self, request):
-        print(request.data)
-        serializer = ProductSerializer(data=request.data)
+        # دریافت تصاویر از درخواست
+        images = request.FILES.getlist('images')
 
+        # بررسی تعداد تصاویر (حداکثر 10 تصویر)
+        if len(images) > 10:
+            return Response(
+                {"error": "You can upload a maximum of 10 images per product."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # ایجاد محصول
+        serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
             product = serializer.save()
-            images = request.FILES.getlist('images')
+
+            # ذخیره تصاویر به مدل ProductImage
             for image in images:
                 ProductImage.objects.create(product=product, image=image)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
 
 
 class AddProfile(APIView):
