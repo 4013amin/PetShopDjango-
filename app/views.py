@@ -66,7 +66,7 @@ class GetCategoriesView(APIView):
 
 class AddProductView(APIView):
     def post(self, request):
-        print(request.data)  # Log request data
+        print(request.data)
         serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -90,7 +90,7 @@ class AddFavoriteView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        product_id = request.data.get('product_id')
+        product_id = request.data.get('id')
         try:
             product = Product.objects.get(id=product_id)
             favorite, created = Favorite.objects.get_or_create(user=request.user, product=product)
