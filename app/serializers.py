@@ -17,7 +17,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = '__all'
+        fields = '__all__'
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
