@@ -1,31 +1,28 @@
 from rest_framework import serializers
 
-from .models import Product, Category, Users, Favorite , ProductImage
+from .models import Product, Category, Users, Favorite, ProductImage
 
 
-
-        
-        
 class ProductImageSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = ProductImage
-        fields = ['image'] 
-        
-        
+        fields = ['image_url']
+
+    def get_image_url(self, obj):
+        return obj.image.url if obj.image else None
+
+
 class ProductSerializer(serializers.ModelSerializer):
-    images = ProductImageSerializer(many=True, read_only=True)
+    images = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = '__all__'
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        # اگر هیچ تصویری وجود ندارد، یک آرایه خالی برگردانید
-        if 'images' not in representation or representation['images'] is None:
-            representation['images'] = []
-        return representation
-
+    def get_images(self, obj):
+        return [image.image.url for image in obj.images.all()]
 
 
 class UsersSerializer(serializers.ModelSerializer):

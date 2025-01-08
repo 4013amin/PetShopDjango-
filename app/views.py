@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from app.models import Product, Category, Favorite, OTP , ProductImage
+from app.models import Product, Category, Favorite, OTP, ProductImage
 from app.serializers import ProductSerializer, CategorySerializer, UsersSerializer, FavoriteSerializer
 from rest_framework.permissions import IsAuthenticated
 import random
@@ -17,10 +17,9 @@ logger = logging.getLogger(__name__)
 # Create your views here.
 class GetProductsView(APIView):
     def get(self, request):
-        products = Product.objects.all()
+        products = Product.objects.prefetch_related('images').all()
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 
 class GetProductByIdView(APIView):
@@ -30,32 +29,32 @@ class GetProductByIdView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class AddProductView(APIView):
-    def post(self, request):
-        # دریافت داده‌ها از درخواست
-        data = request.data
-        base64_image = data.get('image')  # فرض بر این است که تصویر به صورت Base64 ارسال می‌شود
-
-        # اگر تصویر وجود دارد، آن را ذخیره می‌کنیم
-        if base64_image:
-            product = Product(
-                name=data.get('name'),
-                description=data.get('description'),
-                nameUser=data.get('nameUser'),
-                phone=data.get('phone'),
-                city=data.get('city'),
-                address=data.get('address'),
-                family=data.get('family'),
-                price=data.get('price'),
-            )
-            # ذخیره تصویر
-            product.save_image(base64_image)
-            product.save()
-
-            # بازگشت نتیجه
-            return Response(ProductSerializer(product).data, status=status.HTTP_201_CREATED)
-        else:
-            return Response({"error": "Image is required"}, status=status.HTTP_400_BAD_REQUEST)
+# class AddProductView(APIView):
+#     def post(self, request):
+#         # دریافت داده‌ها از درخواست
+#         data = request.data
+#         base64_image = data.get('image')  # فرض بر این است که تصویر به صورت Base64 ارسال می‌شود
+#
+#         # اگر تصویر وجود دارد، آن را ذخیره می‌کنیم
+#         if base64_image:
+#             product = Product(
+#                 name=data.get('name'),
+#                 description=data.get('description'),
+#                 nameUser=data.get('nameUser'),
+#                 phone=data.get('phone'),
+#                 city=data.get('city'),
+#                 address=data.get('address'),
+#                 family=data.get('family'),
+#                 price=data.get('price'),
+#             )
+#             # ذخیره تصویر
+#             product.save_image(base64_image)
+#             product.save()
+#
+#             # بازگشت نتیجه
+#             return Response(ProductSerializer(product).data, status=status.HTTP_201_CREATED)
+#         else:
+#             return Response({"error": "Image is required"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GetCategoriesView(APIView):
@@ -67,17 +66,14 @@ class GetCategoriesView(APIView):
 
 class AddProductView(APIView):
     def post(self, request):
-        # دریافت تصاویر از درخواست
         images = request.FILES.getlist('images')
 
-        # بررسی تعداد تصاویر (حداکثر 10 تصویر)
         if len(images) > 10:
             return Response(
                 {"error": "You can upload a maximum of 10 images per product."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # ایجاد محصول
         serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
             product = serializer.save()
@@ -89,9 +85,6 @@ class AddProductView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-
 
 
 class AddProfile(APIView):
