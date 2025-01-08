@@ -29,33 +29,6 @@ class GetProductByIdView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# class AddProductView(APIView):
-#     def post(self, request):
-#         # دریافت داده‌ها از درخواست
-#         data = request.data
-#         base64_image = data.get('image')  # فرض بر این است که تصویر به صورت Base64 ارسال می‌شود
-#
-#         # اگر تصویر وجود دارد، آن را ذخیره می‌کنیم
-#         if base64_image:
-#             product = Product(
-#                 name=data.get('name'),
-#                 description=data.get('description'),
-#                 nameUser=data.get('nameUser'),
-#                 phone=data.get('phone'),
-#                 city=data.get('city'),
-#                 address=data.get('address'),
-#                 family=data.get('family'),
-#                 price=data.get('price'),
-#             )
-#             # ذخیره تصویر
-#             product.save_image(base64_image)
-#             product.save()
-#
-#             # بازگشت نتیجه
-#             return Response(ProductSerializer(product).data, status=status.HTTP_201_CREATED)
-#         else:
-#             return Response({"error": "Image is required"}, status=status.HTTP_400_BAD_REQUEST)
-
 
 class GetCategoriesView(APIView):
     def get(self, request):
@@ -78,7 +51,6 @@ class AddProductView(APIView):
         if serializer.is_valid():
             product = serializer.save()
 
-            # ذخیره تصاویر به مدل ProductImage
             for image in images:
                 ProductImage.objects.create(product=product, image=image)
 
