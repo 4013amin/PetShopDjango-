@@ -29,7 +29,6 @@ class GetProductByIdView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-
 class GetCategoriesView(APIView):
     def get(self, request):
         categories = Category.objects.all()
@@ -69,7 +68,7 @@ class AddProfile(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# Favorite
+# Add a product to favorites
 class AddFavoriteView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -85,11 +84,12 @@ class AddFavoriteView(APIView):
             return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
+# Remove a product from favorites
 class RemoveFavoriteView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        product_id = request.data.get('product_id')
+        product_id = request.data.get('product_id')  # دریافت شناسه محصول از داده‌های ورودی
         try:
             favorite = Favorite.objects.get(user=request.user, product_id=product_id)
             favorite.delete()
@@ -98,11 +98,12 @@ class RemoveFavoriteView(APIView):
             return Response({"error": "Favorite not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
+# Get the list of favorite products
 class GetFavoritesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        favorites = Favorite.objects.filter(user=request.user)
+        favorites = Favorite.objects.filter(user=request.user)  # دریافت علاقه‌مندی‌های کاربر فعلی
         serializer = FavoriteSerializer(favorites, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

@@ -43,15 +43,6 @@ class Users(models.Model):
     password = models.CharField(max_length=20)
 
 
-class Favorite(models.Model):
-    user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='favorites')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='favorites')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.user} - {self.product}"
-
-
 class OTP(models.Model):
     phone = models.CharField(max_length=250)
     otp = models.CharField(max_length=5)
@@ -59,3 +50,12 @@ class OTP(models.Model):
 
     def __str__(self):
         return f"{self.phone} - {self.otp}"
+
+
+class Favorite(models.Model):
+    otp = models.ForeignKey(OTP, on_delete=models.CASCADE, related_name='favorites')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='favorites')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.otp.phone} - {self.product.name}"

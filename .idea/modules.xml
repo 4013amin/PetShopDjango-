@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/ShopApp.iml" filepath="$PROJECT_DIR$/.idea/ShopApp.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/PetShopDjango.iml" filepath="$PROJECT_DIR$/.idea/PetShopDjango.iml" />
     </modules>
   </component>
 </project>
