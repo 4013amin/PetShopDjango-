@@ -67,51 +67,6 @@ class AddProfile(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# اضافه کردن به علاقه‌مندی‌ها
-class AddFavoriteView(APIView):
-    def post(self, request):
-        product_id = request.data.get("id")
-        otp_id = request.data.get("id") 
-
-        try:
-            product = Product.objects.get(id=product_id)
-
-            otp = OTP.objects.get(id=otp_id, is_valid=True)
-
-            favorite, created = Favorite.objects.get_or_create(otp=otp, product=product)
-            if created:
-                return Response({"message": "Product added to favorites"}, status=status.HTTP_201_CREATED)
-            return Response({"message": "Product already in favorites"}, status=status.HTTP_200_OK)
-
-        except Product.DoesNotExist:
-            return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
-        except OTP.DoesNotExist:
-            return Response({"error": "OTP not found or not verified"}, status=status.HTTP_404_NOT_FOUND)
-        
-
-# Remove a product from favorites
-class RemoveFavoriteView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        product_id = request.data.get('product_id')  # دریافت شناسه محصول از داده‌های ورودی
-        try:
-            favorite = Favorite.objects.get(user=request.user, product_id=product_id)
-            favorite.delete()
-            return Response({"message": "Product removed from favorites"}, status=status.HTTP_200_OK)
-        except Favorite.DoesNotExist:
-            return Response({"error": "Favorite not found"}, status=status.HTTP_404_NOT_FOUND)
-
-
-# Get the list of favorite products
-class GetFavoritesView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        favorites = Favorite.objects.filter(user=request.user)  # دریافت علاقه‌مندی‌های کاربر فعلی
-        serializer = FavoriteSerializer(favorites, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 OTP_EXPIRATION_TIME = 2 * 60
 
