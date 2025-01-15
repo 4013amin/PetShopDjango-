@@ -67,22 +67,27 @@ class AddProfile(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-# Add a product to favorites
+# اضافه کردن به علاقه‌مندی‌ها
 class AddFavoriteView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def post(self, request):
-        product_id = request.data.get('id')
+        product_id = request.data.get("id")
+        otp_id = request.data.get("id") 
+
         try:
             product = Product.objects.get(id=product_id)
-            favorite, created = Favorite.objects.get_or_create(user=request.user, product=product)
+
+            otp = OTP.objects.get(id=otp_id, is_valid=True)
+
+            favorite, created = Favorite.objects.get_or_create(otp=otp, product=product)
             if created:
                 return Response({"message": "Product added to favorites"}, status=status.HTTP_201_CREATED)
             return Response({"message": "Product already in favorites"}, status=status.HTTP_200_OK)
+
         except Product.DoesNotExist:
             return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
-
+        except OTP.DoesNotExist:
+            return Response({"error": "OTP not found or not verified"}, status=status.HTTP_404_NOT_FOUND)
+        
 
 # Remove a product from favorites
 class RemoveFavoriteView(APIView):
