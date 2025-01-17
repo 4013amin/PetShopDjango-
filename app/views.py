@@ -45,7 +45,7 @@ class AddProductView(APIView):
                 {"error": "You can upload a maximum of 10 images per product."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
+    
         serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
             product = serializer.save()
