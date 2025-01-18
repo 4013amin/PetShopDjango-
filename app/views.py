@@ -4,7 +4,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from app.models import Product, Category, Favorite, OTP, ProductImage
 from app.serializers import ProductSerializer, CategorySerializer, UsersSerializer, FavoriteSerializer
-from rest_framework.permissions import IsAuthenticated
 import random
 from .models import OTP
 from django.http import JsonResponse
