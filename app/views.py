@@ -9,6 +9,7 @@ from .models import OTP
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import logging
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class AddProductView(APIView):
                 {"error": "You can upload a maximum of 10 images per product."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-    
+
         serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
             product = serializer.save()
@@ -74,6 +75,17 @@ def generate_otp():
     return random.randint(10000, 99999)
 
 
+def send_sms(phone_number, message):
+    api_key = 'your_api_key_here'
+    url = 'https://raygansms.com/SendMessageWithCode.ashx'
+    payload = {
+        'receptor': phone_number,
+        'message': message,
+    }
+    response = requests.post(url, data=payload)
+    return response.json()
+
+
 @csrf_exempt
 def send_otp(request):
     if request.method == 'POST':
@@ -85,9 +97,13 @@ def send_otp(request):
 
         OTP.objects.create(phone=phone_number, otp=otp, is_valid=True)
 
-        print(f"OTP for {phone_number}: {otp}")
+        message = f"کد احراز هویت شما: {otp}"
+        sms_response = send_sms(phone_number, message)
 
-        return JsonResponse({'status': 'success', 'message': 'OTP sent successfully.'}, status=200)
+        if sms_response.get('status') == 'success':
+            return JsonResponse({'status': 'success', 'message': 'OTP sent successfully.'}, status=200)
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Failed to send OTP.'}, status=500)
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
 
@@ -102,8 +118,6 @@ def verify_otp(request):
             return JsonResponse({'error': 'Phone number and OTP are required'}, status=400)
 
         try:
-            print(f"Verifying OTP for phone: {phone}, OTP: {otp}")
-
             otp_entry = OTP.objects.get(phone=phone, otp=otp, is_valid=True)
 
             if otp_entry.is_valid:
