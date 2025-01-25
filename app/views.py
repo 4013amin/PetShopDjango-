@@ -9,7 +9,7 @@ from .models import OTP
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import logging
-
+import requests
 logger = logging.getLogger(__name__)
 
 
@@ -68,11 +68,33 @@ class AddProfile(APIView):
 
 
 OTP_EXPIRATION_TIME = 2 * 60
+SMS_IR_API_KEY = "PN1TVeBeaAehFLJAKU4XdfpsFXsQguYfleO0bV4ceh6diTZid2hRXza3uSkBbDef"
 
 
 def generate_otp():
     return random.randint(10000, 99999)
 
+
+# ارسال پیامک از طریق SMS.ir
+def send_sms_ir(phone_number, otp):
+    url = "https://api.sms.ir/v1/send/verify"
+    headers = {
+        "Content-Type": "application/json",
+        "x-api-key": SMS_IR_API_KEY
+    }
+    payload = {
+        "mobile": phone_number,
+        "templateId": "302699",  # شناسه قالب پیامک شما در پنل SMS.ir
+        "parameters": [
+            {"name": "OTP", "value": otp}  # متغیرهای موردنیاز در قالب پیامک
+        ]
+    }
+
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code == 200:
+        return True
+    else:
+        raise Exception(f"SMS.ir Error: {response.text}")
 
 @csrf_exempt
 def send_otp(request):
@@ -86,7 +108,16 @@ def send_otp(request):
         OTP.objects.create(phone=phone_number, otp=otp, is_valid=True)
 
         print(f"OTP for {phone_number}: {otp}")
+        
+         # ارسال پیامک
+        try:
+            send_sms_ir(phone_number, otp)
+            print(f"OTP sent to {phone_number}: {otp}")
+            return JsonResponse({'status': 'success', 'message': 'OTP sent successfully.'}, status=200)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f"Error sending OTP: {str(e)}"}, status=500)
 
+        
         return JsonResponse({'status': 'success', 'message': 'OTP sent successfully.'}, status=200)
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
