@@ -4,5 +4,14 @@
   "build": {
     "location": "iran"
   },
-  "disks": []
+  "disks": [
+    {
+      "name": "media",
+      "mountTo": "media/"
+    },
+    {
+      "name": "data",
+      "mountTo": "data/"
+    }
+  ]
 }
