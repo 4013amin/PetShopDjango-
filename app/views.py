@@ -10,6 +10,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import logging
 import requests
+
 logger = logging.getLogger(__name__)
 
 
@@ -45,9 +46,15 @@ class AddProductView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        phone = request.data.get('phone')  # فرض می‌کنیم شماره تلفن کاربر ارسال می‌شود
+        try:
+            user = OTP.objects.get(phone=phone)
+        except OTP.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
         serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
-            product = serializer.save()
+            product = serializer.save(user=user)
 
             for image in images:
                 ProductImage.objects.create(product=product, image=image)
@@ -57,14 +64,20 @@ class AddProductView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AddProfile(APIView):
-    def post(self, request):
-        serializer = UsersSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class UserProductsView(APIView):
+    def get(self, request):
+        phone = request.query_params.get('phone')  # دریافت شماره تلفن کاربر از پارامترهای درخواست
+        if not phone:
+            return Response({"error": "Phone number is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = OTP.objects.get(phone=phone)
+        except OTP.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        products = Product.objects.filter(user=user)
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 OTP_EXPIRATION_TIME = 2 * 60
@@ -96,6 +109,7 @@ def send_sms_ir(phone_number, otp):
     else:
         raise Exception(f"SMS.ir Error: {response.text}")
 
+
 @csrf_exempt
 def send_otp(request):
     if request.method == 'POST':
@@ -108,8 +122,8 @@ def send_otp(request):
         OTP.objects.create(phone=phone_number, otp=otp, is_valid=True)
 
         print(f"OTP for {phone_number}: {otp}")
-        
-         # ارسال پیامک
+
+        # ارسال پیامک
         try:
             send_sms_ir(phone_number, otp)
             print(f"OTP sent to {phone_number}: {otp}")
@@ -117,7 +131,6 @@ def send_otp(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': f"Error sending OTP: {str(e)}"}, status=500)
 
-        
         return JsonResponse({'status': 'success', 'message': 'OTP sent successfully.'}, status=200)
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)

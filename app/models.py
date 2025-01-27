@@ -12,6 +12,15 @@ class Category(models.Model):
         return self.name
 
 
+class OTP(models.Model):
+    phone = models.CharField(max_length=250)
+    otp = models.CharField(max_length=5)
+    is_valid = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.phone} - {self.otp}"
+
+
 class Product(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
@@ -22,6 +31,7 @@ class Product(models.Model):
     family = models.CharField(max_length=255)
     image = models.ImageField(upload_to='products/images/', blank=True, null=True)
     price = models.PositiveIntegerField()
+    user = models.ForeignKey(OTP, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -41,15 +51,6 @@ class ProductImage(models.Model):
 class Users(models.Model):
     phone = models.CharField(max_length=12)
     password = models.CharField(max_length=20)
-
-
-class OTP(models.Model):
-    phone = models.CharField(max_length=250)
-    otp = models.CharField(max_length=5)
-    is_valid = models.BooleanField(default=True)
-
-    def __str__(self):
-        return f"{self.phone} - {self.otp}"
 
 
 class Favorite(models.Model):

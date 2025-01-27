@@ -19,7 +19,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        exclude = ['address', 'family'] 
+        exclude = ['address', 'family']
 
     def get_images(self, obj):
         return [image.image.url for image in obj.images.all()]
