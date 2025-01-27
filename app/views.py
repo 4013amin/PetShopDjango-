@@ -66,9 +66,10 @@ class AddProductView(APIView):
 
 class UserProductsView(APIView):
     def get(self, request):
-        phone = request.query_params.get('phone')  # دریافت شماره تلفن کاربر از پارامترهای درخواست
+        phone = request.query_params.get('phone')
+
         if not phone:
-            return Response({"error": "Phone number is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Phone not found."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             user = OTP.objects.get(phone=phone)
@@ -76,7 +77,9 @@ class UserProductsView(APIView):
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
         products = Product.objects.filter(user=user)
+
         serializer = ProductSerializer(products, many=True)
+
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -109,7 +112,6 @@ def send_sms_ir(phone_number, otp):
     else:
         raise Exception(f"SMS.ir Error: {response.text}")
 
-
 @csrf_exempt
 def send_otp(request):
     if request.method == 'POST':
@@ -117,23 +119,36 @@ def send_otp(request):
         if not phone_number:
             return JsonResponse({'status': 'error', 'message': 'Phone number is required.'}, status=400)
 
-        otp = generate_otp()
+        # بررسی اینکه آیا شماره تلفن قبلاً ثبت‌نام کرده است یا خیر
+        otp_entry = OTP.objects.filter(phone=phone_number).first()
 
-        OTP.objects.create(phone=phone_number, otp=otp, is_valid=True)
+        if otp_entry:
+            # شماره تلفن قبلاً موجود است، فقط کد جدید ارسال می‌کنیم
+            otp = generate_otp()
+            otp_entry.otp = otp  # کد جدید را به OTP قبلی نسبت می‌دهیم
+            otp_entry.is_valid = True  # دوباره کد را معتبر می‌کنیم
+            otp_entry.save()
 
-        print(f"OTP for {phone_number}: {otp}")
+            print(f"OTP for {phone_number}: {otp}")
+            try:
+                send_sms_ir(phone_number, otp)
+                return JsonResponse({'status': 'success', 'message': 'OTP sent successfully.'}, status=200)
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': f"Error sending OTP: {str(e)}"}, status=500)
+        else:
+            # اگر شماره تلفن وجود نداشت، OTP جدید را ایجاد کرده و ذخیره می‌کنیم
+            otp = generate_otp()
+            OTP.objects.create(phone=phone_number, otp=otp, is_valid=True)
 
-        # ارسال پیامک
-        try:
-            send_sms_ir(phone_number, otp)
-            print(f"OTP sent to {phone_number}: {otp}")
-            return JsonResponse({'status': 'success', 'message': 'OTP sent successfully.'}, status=200)
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': f"Error sending OTP: {str(e)}"}, status=500)
-
-        return JsonResponse({'status': 'success', 'message': 'OTP sent successfully.'}, status=200)
+            print(f"OTP for {phone_number}: {otp}")
+            try:
+                send_sms_ir(phone_number, otp)
+                return JsonResponse({'status': 'success', 'message': 'OTP sent successfully.'}, status=200)
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': f"Error sending OTP: {str(e)}"}, status=500)
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
+
 
 
 @csrf_exempt
@@ -142,22 +157,29 @@ def verify_otp(request):
         phone = request.POST.get('phone')
         otp = request.POST.get('otp')
 
+        # بررسی اینکه شماره تلفن و OTP وارد شده‌اند
         if not phone or not otp:
             return JsonResponse({'error': 'Phone number and OTP are required'}, status=400)
 
         try:
             print(f"Verifying OTP for phone: {phone}, OTP: {otp}")
 
+            # تلاش برای پیدا کردن OTP مربوطه در پایگاه داده
             otp_entry = OTP.objects.get(phone=phone, otp=otp, is_valid=True)
 
+            # بررسی اعتبار کد OTP
             if otp_entry.is_valid:
-                otp_entry.is_verified = True
-                otp_entry.save()
-                return JsonResponse({'message': 'OTP verified successfully!'})
-            else:
-                return JsonResponse({'error': 'OTP is expired'}, status=400)
+                return JsonResponse({'message': 'OTP already verified.'})
+
+            # تأیید OTP و تغییر وضعیت آن
+            otp_entry.is_valid = True
+            otp_entry.is_valid = False  # تغییر وضعیت به غیرفعال پس از تأیید
+            otp_entry.save()
+
+            return JsonResponse({'message': 'OTP verified successfully!'}, status=200)
 
         except OTP.DoesNotExist:
             return JsonResponse({'error': 'Invalid OTP or phone number'}, status=400)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+

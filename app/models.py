@@ -13,7 +13,7 @@ class Category(models.Model):
 
 
 class OTP(models.Model):
-    phone = models.CharField(max_length=250)
+    phone = models.CharField(max_length=15, unique=True)
     otp = models.CharField(max_length=5)
     is_valid = models.BooleanField(default=True)
 
@@ -49,8 +49,12 @@ class ProductImage(models.Model):
 
 
 class Users(models.Model):
-    phone = models.CharField(max_length=12)
-    password = models.CharField(max_length=20)
+    phone = models.ForeignKey(OTP, on_delete=models.CASCADE, related_name='users')
+    name = models.CharField(max_length=255)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='users')
+
+    def __str__(self):
+        return f"{self.phone} - {self.name}"
 
 
 class Favorite(models.Model):
