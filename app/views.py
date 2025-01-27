@@ -112,6 +112,7 @@ def send_sms_ir(phone_number, otp):
     else:
         raise Exception(f"SMS.ir Error: {response.text}")
 
+
 @csrf_exempt
 def send_otp(request):
     if request.method == 'POST':
@@ -150,7 +151,6 @@ def send_otp(request):
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
 
 
-
 @csrf_exempt
 def verify_otp(request):
     if request.method == 'POST':
@@ -182,4 +182,3 @@ def verify_otp(request):
             return JsonResponse({'error': 'Invalid OTP or phone number'}, status=400)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
-
