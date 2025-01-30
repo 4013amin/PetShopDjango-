@@ -7,11 +7,11 @@
   "disks": [
     {
       "name": "media",
-      "mountTo": "media/"
+      "mountTo": "media"
     },
     {
       "name": "data",
-      "mountTo": "data/"
+      "mountTo": "data"
     }
   ]
 }
