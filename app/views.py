@@ -82,6 +82,26 @@ class UserProductsView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def delete(self, request):
+        phone = request.query_params.get('phone')
+        id_Product = request.query_params.get('id')
+
+        if not phone or not id_Product:
+            return Response({"error": "Phone or Product ID is missing."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = OTP.objects.get(phone=phone)
+        except OTP.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            product = Product.objects.get(user=user, id=int(id_Product))  # تبدیل به int
+        except Product.DoesNotExist:
+            return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        product.delete()
+        return Response({"message": "Product deleted."}, status=status.HTTP_200_OK)
+
 
 OTP_EXPIRATION_TIME = 2 * 60
 SMS_IR_API_KEY = "PN1TVeBeaAehFLJAKU4XdfpsFXsQguYfleO0bV4ceh6diTZid2hRXza3uSkBbDef"
