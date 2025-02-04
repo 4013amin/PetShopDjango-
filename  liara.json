@@ -3,15 +3,5 @@
   "port": 80,
   "build": {
     "location": "iran"
-  },
-  "disks": [
-    {
-      "name": "media",
-      "mountTo": "media"
-    },
-    {
-      "name": "data",
-      "mountTo": "data"
-    }
-  ]
+  }
 }
