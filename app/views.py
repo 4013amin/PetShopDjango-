@@ -104,7 +104,7 @@ class UserProductsView(APIView):
 
 
 OTP_EXPIRATION_TIME = 2 * 60
-SMS_IR_API_KEY = "PN1TVeBeaAehFLJAKU4XdfpsFXsQguYfleO0bV4ceh6diTZid2hRXza3uSkBbDef"
+SMS_IR_API_KEY = "fTisg3oGV8mUzxnKhr9a81XpbbTekqsa7Y2YYwdZ5S1X7GDi"
 
 
 def generate_otp():
