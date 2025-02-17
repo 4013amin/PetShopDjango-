@@ -120,9 +120,9 @@ def send_sms_ir(phone_number, otp):
     }
     payload = {
         "mobile": phone_number,
-        "templateId": "302699",  # شناسه قالب پیامک شما در پنل SMS.ir
+        "templateId": "302699",
         "parameters": [
-            {"name": "OTP", "value": otp}  # متغیرهای موردنیاز در قالب پیامک
+            {"name": "OTP", "value": otp}
         ]
     }
 
