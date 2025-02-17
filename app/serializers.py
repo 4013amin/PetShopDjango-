@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Product, Category, Users, Favorite, ProductImage
+from .models import Product, Category, ProductImage, Profile
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
@@ -25,19 +25,13 @@ class ProductSerializer(serializers.ModelSerializer):
         return [image.image.url for image in obj.images.all()]
 
 
-class UsersSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Users
-        fields = '__all__'
-
-
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = '__all__'
 
 
-class FavoriteSerializer(serializers.ModelSerializer):
+class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Favorite
-        fields = ('id', 'user', 'product', 'created_at')
+        model = Profile
+        fields = '__all__'

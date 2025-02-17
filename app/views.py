@@ -1,9 +1,8 @@
-from django.shortcuts import render, redirect
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from app.models import Product, Category, Favorite, OTP, ProductImage
-from app.serializers import ProductSerializer, CategorySerializer, UsersSerializer, FavoriteSerializer
+from app.models import Product, Category, ProductImage, Profile
+from app.serializers import ProductSerializer, CategorySerializer, ProfileSerializer
 import random
 from .models import OTP
 from django.http import JsonResponse
@@ -202,3 +201,41 @@ def verify_otp(request):
             return JsonResponse({'error': 'Invalid OTP or phone number'}, status=400)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+class ProfileView(APIView):
+    def get(self, request):
+        phone = request.query_params.get('phone')
+
+        if not phone:
+            return Response({"error": "Phone number is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = OTP.objects.get(phone=phone)
+            profile, created = Profile.objects.get_or_create(user=user)
+            serializer = ProfileSerializer(profile)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except OTP.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def post(self, request):
+        phone = request.query_params.get('phone')
+
+        if not phone:
+            return Response({"error": "This phone is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = OTP.objects.get(phone=phone)
+            profile, created = Profile.objects.get_or_create(user=user)
+
+            if profile.user != user:
+                return Response({"error": "Unauthorized access."}, status=status.HTTP_403_FORBIDDEN)
+
+            serializer = ProfileSerializer(profile, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except OTP.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)

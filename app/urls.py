@@ -8,6 +8,7 @@ urlpatterns = [
                   path('products/<int:pk>/', views.GetProductByIdView.as_view()),
                   path('GetCategories/', views.GetCategoriesView.as_view()),
                   path('user-products/', views.UserProductsView.as_view(), name="user-products"),
+                  path('profile/', views.ProfileView.as_view()),
                   path('AddProduct/', views.AddProductView.as_view()),
                   path('send-otp/', views.send_otp, name='send_otp'),
                   path('verify-otp/', views.verify_otp, name='verify_otp'),

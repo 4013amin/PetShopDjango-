@@ -48,19 +48,11 @@ class ProductImage(models.Model):
         return f"Image for {self.product.name}"
 
 
-class Users(models.Model):
-    phone = models.ForeignKey(OTP, on_delete=models.CASCADE, related_name='users')
+class Profile(models.Model):
+    user = models.OneToOneField(OTP, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='users')
+    image = models.ImageField(upload_to='profiles/images/', blank=True, null=True)
+    credit = models.IntegerField(default=0)
 
     def __str__(self):
-        return f"{self.phone} - {self.name}"
-
-
-class Favorite(models.Model):
-    otp = models.ForeignKey(OTP, on_delete=models.CASCADE, related_name='favorites')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='favorites')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.otp.phone} - {self.product.name}"
+        return self.user.phone

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Category, Users, OTP, ProductImage, Favorite
+from .models import Product, Category, OTP, ProductImage
 
 
 # Register your models here.
@@ -13,14 +13,6 @@ class ImageFiledAdmin(admin.ModelAdmin):
     list_display = ('id', 'product', 'image')
 
 
-@admin.register(Users)
-class profileUsers(admin.ModelAdmin):
-    list_display = ('phone', 'name', 'product')
-
-
-@admin.register(Favorite)
-class FavoriteAdmin(admin.ModelAdmin):
-    list_display = ('id', 'product', 'created_at')
 
 
 @admin.register(OTP)
