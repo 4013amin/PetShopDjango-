@@ -9,6 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import logging
 import requests
+from rest_framework.parsers import JSONParser
 
 logger = logging.getLogger(__name__)
 
@@ -204,6 +205,8 @@ def verify_otp(request):
 
 
 class ProfileView(APIView):
+    parser_classes = [JSONParser]
+
     def get(self, request):
         phone = request.query_params.get('phone')
 
@@ -239,3 +242,21 @@ class ProfileView(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except OTP.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request):
+        phone = request.query_params.get('phone')
+
+        if not phone:
+            return Response({"error": "This phone is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = OTP.objects.get(phone=phone)
+            profile = Profile.objects.get(user=user)
+
+            profile.delete()
+            return Response({"message": f"Profile for {phone} deleted successfully."}, status=status.HTTP_200_OK)
+
+        except OTP.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Profile.DoesNotExist:
+            return Response({"error": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)

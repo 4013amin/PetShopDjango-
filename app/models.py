@@ -50,8 +50,8 @@ class ProductImage(models.Model):
 
 class Profile(models.Model):
     user = models.OneToOneField(OTP, on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
-    image = models.ImageField(upload_to='profiles/images/', blank=True, null=True)
+    name = models.CharField(max_length=255, blank=True)
+    image = models.URLField(max_length=300, blank=True, null=True)
     credit = models.IntegerField(default=0)
 
     def __str__(self):
