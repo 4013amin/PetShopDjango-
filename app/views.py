@@ -221,7 +221,7 @@ class ProfileView(APIView):
         except OTP.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    def post(self, request):
+    def put(self, request):
         phone = request.query_params.get('phone')
 
         if not phone:
