@@ -53,6 +53,17 @@ class Profile(models.Model):
     name = models.CharField(max_length=255)
     image = models.ImageField(upload_to='media/', blank=True, null=True)
     credit = models.IntegerField(default=0)
-
+    
     def __str__(self):
         return self.user.phone
+
+
+class ChatMessage(models.Model):
+    sender = models.ForeignKey('OTP', on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey('OTP', on_delete=models.CASCADE, related_name='received_messages')
+    product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='chat_messages', null=True, blank=True)
+    message = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.sender.phone} -> {self.receiver.phone}: {self.message[:20]}"
