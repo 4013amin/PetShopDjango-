@@ -8,6 +8,7 @@ from .models import OTP
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import logging
+from rest_framework.parsers import MultiPartParser, FormParser
 import requests
 from rest_framework.parsers import JSONParser
 
@@ -206,7 +207,7 @@ def verify_otp(request):
 
 class ProfileView(APIView):
     parser_classes = [JSONParser]
-
+    parser_classes = (MultiPartParser, FormParser) 
     def get(self, request):
         phone = request.query_params.get('phone')
 
@@ -231,15 +232,17 @@ class ProfileView(APIView):
             user = OTP.objects.get(phone=phone)
             profile, created = Profile.objects.get_or_create(user=user)
 
-            if profile.user != user:
-                return Response({"error": "Unauthorized access."}, status=status.HTTP_403_FORBIDDEN)
+            image = request.FILES.get("image")  # مقدار عکس را دریافت کنید
 
             serializer = ProfileSerializer(profile, data=request.data, partial=True)
             if serializer.is_valid():
+                if image:  # اگر عکس ارسال شده باشد، مقداردهی کن
+                    profile.image = image
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         except OTP.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
