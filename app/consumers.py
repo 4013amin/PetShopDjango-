@@ -5,10 +5,15 @@ from asgiref.sync import sync_to_async
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.sender = self.scope["user"]
+        self.sender = self.scope.get("user")
+
+        if self.sender is None or self.sender.is_anonymous:
+            await self.close()
+            return
+
         self.receiver = self.scope["url_route"]["kwargs"]["receiver"]
-        self.room_name = f"chat_{self.sender}_{self.receiver}"
-        self.room_group_name = f"chat_{self.sender}_{self.receiver}"
+        self.room_name = f"chat_{self.sender.phone}_{self.receiver}"
+        self.room_group_name = f"chat_{self.sender.phone}_{self.receiver}"
 
         await self.channel_layer.group_add(
             self.room_group_name, self.channel_name
