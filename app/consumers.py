@@ -3,6 +3,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from .models import ChatMessage, OTP, Product
 from asgiref.sync import sync_to_async
 
+
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.sender = self.scope.get("user")
