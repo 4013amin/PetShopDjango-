@@ -65,7 +65,8 @@ class Profile(models.Model):
 class ChatMessage(models.Model):
     sender = models.ForeignKey('OTP', on_delete=models.CASCADE, related_name='sent_messages')
     receiver = models.ForeignKey('OTP', on_delete=models.CASCADE, related_name='received_messages')
-    product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='chat_messages', null=True, blank=True)
+    product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='chat_messages', null=True,
+                                blank=True)
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
