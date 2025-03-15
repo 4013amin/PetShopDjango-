@@ -15,7 +15,7 @@ class ImageFiledAdmin(admin.ModelAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'name', 'credit')
+    list_display = ('id', 'user', 'name')
 
 
 @admin.register(Category)
