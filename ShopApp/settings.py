@@ -51,13 +51,11 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'ShopApp.urls'
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
-        ,
-        'APP_DIRS': True,
+        'DIRS': [],
+        'APP_DIRS': True,  # این باید True باشد
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
