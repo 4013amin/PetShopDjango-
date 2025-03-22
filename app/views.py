@@ -213,38 +213,43 @@ class ProfileView(APIView):
 
         if not phone:
             return Response({"error": "Phone number is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not profile:
+            return Response({"error" : "پروفایل شما خالی است بسازید لطفا"})
 
         try:
             user = OTP.objects.get(phone=phone)
-            profile, created = Profile.objects.get_or_create(user=user)
+            profile = Profile.objects.get_or_create(user=user)[0]
             serializer = ProfileSerializer(profile)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except OTP.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    def put(self, request):
+    def put(self , request):
         phone = request.query_params.get('phone')
 
-        if not phone:
-            return Response({"error": "This phone is required."}, status=status.HTTP_400_BAD_REQUEST)
-
+        if not phone :
+             return Response({"error": "This phone is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
         try:
             user = OTP.objects.get(phone=phone)
-            profile, created = Profile.objects.get_or_create(user=user)
+            profile = Profile.objects.get_or_create(user=user)[0]
 
-            image = request.FILES.get("image")  # مقدار عکس را دریافت کنید
+            if not profile.name and not profile.image:
+                profile.name = request.data.get('name', profile.name)
+                profile.email = request.data.get('email', profile.email)
+                profile.image = request.FILES.get('image', profile.image)
+                profile.save()
 
             serializer = ProfileSerializer(profile, data=request.data, partial=True)
             if serializer.is_valid():
-                if image:  # اگر عکس ارسال شده باشد، مقداردهی کن
-                    profile.image = image
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
         except OTP.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
 
     def delete(self, request):
         phone = request.query_params.get('phone')
