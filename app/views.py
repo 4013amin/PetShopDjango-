@@ -190,14 +190,14 @@ def verify_otp(request):
 
             # بررسی اعتبار کد OTP
             if otp_entry.is_valid:
-                return JsonResponse({'message': 'OTP already verified.'})
+                # ایجاد یا بازیابی پروفایل کاربر
+                profile, created = Profile.objects.get_or_create(user=otp_entry)
+                if created:
+                    print(f"New profile created for user: {phone}")
+                else:
+                    print(f"Profile already exists for user: {phone}")
 
-            # تأیید OTP و تغییر وضعیت آن
-            otp_entry.is_valid = True
-            otp_entry.is_valid = False  # تغییر وضعیت به غیرفعال پس از تأیید
-            otp_entry.save()
-
-            return JsonResponse({'message': 'OTP verified successfully!'}, status=200)
+                return JsonResponse({'message': 'OTP verified successfully!'}, status=200)
 
         except OTP.DoesNotExist:
             return JsonResponse({'error': 'Invalid OTP or phone number'}, status=400)
@@ -214,9 +214,7 @@ class ProfileView(APIView):
         if not phone:
             return Response({"error": "Phone number is required."}, status=status.HTTP_400_BAD_REQUEST)
         
-        if not profile:
-            return Response({"error" : "پروفایل شما خالی است بسازید لطفا"})
-
+       
         try:
             user = OTP.objects.get(phone=phone)
             profile = Profile.objects.get_or_create(user=user)[0]
@@ -237,7 +235,6 @@ class ProfileView(APIView):
 
             if not profile.name and not profile.image:
                 profile.name = request.data.get('name', profile.name)
-                profile.email = request.data.get('email', profile.email)
                 profile.image = request.FILES.get('image', profile.image)
                 profile.save()
 

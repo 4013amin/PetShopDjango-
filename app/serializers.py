@@ -39,6 +39,5 @@ class ProfileSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.image = validated_data.get('image', instance.image)
-        instance.credit = validated_data.get('credit', instance.credit)
         instance.save()
         return instance
