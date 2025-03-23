@@ -236,6 +236,9 @@ class ProfileView(APIView):
             if not profile.name and not profile.image:
                 profile.name = request.data.get('name', profile.name)
                 profile.image = request.FILES.get('image', profile.image)
+                profile.gender = request.data.get('gender' , profile.gender)
+                profile.bio = request.data.get('bio' , profile.bio)
+                profile.address = request.data.get('address' , profile.address)
                 profile.save()
 
             serializer = ProfileSerializer(profile, data=request.data, partial=True)
