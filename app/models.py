@@ -62,13 +62,13 @@ class Profile(models.Model):
         return self.user.phone
 
 
+#Chat
 class ChatMessage(models.Model):
-    sender = models.ForeignKey('OTP', on_delete=models.CASCADE, related_name='sent_messages')
-    receiver = models.ForeignKey('OTP', on_delete=models.CASCADE, related_name='received_messages')
-    product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='chat_messages', null=True,
-                                blank=True)
+    sender = models.ForeignKey(OTP, related_name='sent_messages', on_delete=models.CASCADE)
+    receiver = models.ForeignKey(OTP, related_name='received_messages', on_delete=models.CASCADE)
     message = models.TextField()
+    product = models.ForeignKey(Product, null=True, blank=True, on_delete=models.SET_NULL)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.sender.phone} -> {self.receiver.phone}: {self.message[:20]}"
+        return self.sender
