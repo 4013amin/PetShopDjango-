@@ -71,4 +71,4 @@ class ChatMessage(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.sender
+        return f"{self.sender.phone} -> {self.receiver.phone}: {self.message[:20]}"

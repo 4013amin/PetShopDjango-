@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from app.models import Product, Category, ProductImage, Profile
+from app.models import Product, Category, ProductImage, Profile,ChatMessage
 from app.serializers import ProductSerializer, CategorySerializer, ProfileSerializer
 import random
 from .models import OTP
@@ -268,3 +268,36 @@ class ProfileView(APIView):
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
         except Profile.DoesNotExist:
             return Response({"error": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+
+logger = logging.getLogger(__name__)
+
+def get_chat_users(request):
+    phone = request.GET.get('phone')
+    logger.info(f"Received phone: {phone}")
+
+    if not phone:
+        logger.warning("Phone number is missing in the request.")
+        return JsonResponse({'error': 'Phone number required'}, status=400)
+
+    try:
+        otp_user = OTP.objects.get(phone=phone)
+        # Get distinct senders who messaged this user
+        sender_ids = ChatMessage.objects.filter(receiver=otp_user)\
+            .values_list('sender', flat=True).distinct()
+        
+        # Get phone numbers of senders
+        user_phones = OTP.objects.filter(id__in=sender_ids)\
+            .values_list('phone', flat=True)
+        
+        logger.info(f"Found chat users for phone {phone}: {list(user_phones)}")
+        return JsonResponse({'users': list(user_phones)})
+
+    except OTP.DoesNotExist:
+        logger.warning(f"Phone number {phone} not found in OTP model.")
+        return JsonResponse({'error': 'Phone number not found'}, status=404)
+    except Exception as e:
+        logger.error(f"Error fetching chat users: {str(e)}")
+        return JsonResponse({'error': 'Internal server error'}, status=500)

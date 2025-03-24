@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Category, OTP, ProductImage, Profile
+from .models import Product, Category, OTP, ProductImage, Profile , ChatMessage
 
 
 # Register your models here.
@@ -21,3 +21,7 @@ class ProfileAdmin(admin.ModelAdmin):
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
+
+@admin.register(ChatMessage)
+class ChatMessageAdmin(admin.ModelAdmin):
+    list_display = ('id' , 'sender' , 'receiver' , 'message')
