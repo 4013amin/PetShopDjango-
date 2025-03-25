@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Product, Category, ProductImage, Profile
+from .models import Product, Category, ProductImage, Profile , OTP
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
@@ -44,3 +44,10 @@ class ProfileSerializer(serializers.ModelSerializer):
         instance.address = validated_data.get('address', instance.address)
         instance.save()
         return instance
+
+
+
+class ChatUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OTP
+        fields = ['phone']

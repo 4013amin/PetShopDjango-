@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from app.models import Product, Category, ProductImage, Profile,ChatMessage
-from app.serializers import ProductSerializer, CategorySerializer, ProfileSerializer
+from app.serializers import ProductSerializer, CategorySerializer, ProfileSerializer,ChatUserSerializer
 import random
 from .models import OTP
 from django.http import JsonResponse
@@ -271,33 +271,35 @@ class ProfileView(APIView):
 
 
 
-
 logger = logging.getLogger(__name__)
 
-def get_chat_users(request):
-    phone = request.GET.get('phone')
-    logger.info(f"Received phone: {phone}")
+class ChatUsersView(APIView):
+    def get(self, request):
+        phone = request.query_params.get('phone')
+        logger.info(f"Received phone: {phone}")
 
-    if not phone:
-        logger.warning("Phone number is missing in the request.")
-        return JsonResponse({'error': 'Phone number required'}, status=400)
+        if not phone:
+            logger.warning("Phone number is missing in the request.")
+            return Response({'error': 'Phone number required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    try:
-        otp_user = OTP.objects.get(phone=phone)
-        # Get distinct senders who messaged this user
-        sender_ids = ChatMessage.objects.filter(receiver=otp_user)\
-            .values_list('sender', flat=True).distinct()
-        
-        # Get phone numbers of senders
-        user_phones = OTP.objects.filter(id__in=sender_ids)\
-            .values_list('phone', flat=True)
-        
-        logger.info(f"Found chat users for phone {phone}: {list(user_phones)}")
-        return JsonResponse({'users': list(user_phones)})
+        try:
+            otp_user = OTP.objects.get(phone=phone)
 
-    except OTP.DoesNotExist:
-        logger.warning(f"Phone number {phone} not found in OTP model.")
-        return JsonResponse({'error': 'Phone number not found'}, status=404)
-    except Exception as e:
-        logger.error(f"Error fetching chat users: {str(e)}")
-        return JsonResponse({'error': 'Internal server error'}, status=500)
+            # دریافت شناسه‌های فرستنده‌هایی که به این کاربر پیام داده‌اند
+            sender_ids = ChatMessage.objects.filter(receiver=otp_user)\
+                .values_list('sender_id', flat=True).distinct()
+
+            # دریافت شماره تلفن فرستنده‌ها
+            users = OTP.objects.filter(id__in=sender_ids)
+
+            # سریالایز کردن داده‌ها
+            serializer = ChatUserSerializer(users, many=True)
+            logger.info(f"Found chat users for phone {phone}: {serializer.data}")
+            return Response({'users': serializer.data}, status=status.HTTP_200_OK)
+
+        except OTP.DoesNotExist:
+            logger.warning(f"Phone number {phone} not found in OTP model.")
+            return Response({'error': 'Phone number not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.error(f"Error fetching chat users: {str(e)}")
+            return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

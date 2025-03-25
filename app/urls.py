@@ -34,7 +34,7 @@ urlpatterns = [
                   path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
                   path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
                   
-                path('api/chat_users/', views.get_chat_users, name='chat_users'),
+                path('api/chat_users/', views.ChatUsersView.as_view(), name='chat_users'),
 
               
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
