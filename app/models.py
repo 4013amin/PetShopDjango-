@@ -69,6 +69,7 @@ class ChatMessage(models.Model):
     message = models.TextField()
     product = models.ForeignKey(Product, null=True, blank=True, on_delete=models.SET_NULL)
     timestamp = models.DateTimeField(auto_now_add=True)
+    reply_to = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='replies')  
 
     def __str__(self):
         return f"{self.sender.phone} -> {self.receiver.phone}: {self.message[:20]}"
