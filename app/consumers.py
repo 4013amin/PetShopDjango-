@@ -14,50 +14,71 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.room_group_name = f"chat_{sorted_users[0]}_{sorted_users[1]}"
 
         logger.info(f"WebSocket connecting: {self.scope['path']}")
-        logger.info(f"Sender: {self.sender}, Receiver: {self.receiver}")
-
-        # Add to group and accept connection
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
-        # Fetch messages with related sender, receiver, and reply_to
+        # Fetch messages with related fields asynchronously
         messages = await sync_to_async(
             lambda: list(ChatMessage.objects.filter(
                 sender__phone__in=[self.sender, self.receiver],
                 receiver__phone__in=[self.sender, self.receiver]
-            ).select_related('sender', 'receiver', 'reply_to'))
+            ).select_related('sender', 'receiver', 'reply_to', 'reply_to__sender'))
         )()
 
-        # Send existing messages
+        # Process and send messages
         for msg in messages:
+            if self.receiver == msg.receiver.phone and msg.status != 'SEEN':
+                msg.status = 'SEEN'
+                await sync_to_async(msg.save)()
+
             reply_to_data = None
-            if msg.reply_to:
+            if msg.reply_to:  # Check if reply_to exists
                 reply_to_data = {
+                    'id': msg.reply_to.id,
                     'message': msg.reply_to.message,
-                    'sender': msg.reply_to.sender.phone,
+                    'sender': msg.reply_to.sender.phone if msg.reply_to.sender else None,
                     'timestamp': msg.reply_to.timestamp.strftime('%Y-%m-%d %H:%M:%S')
                 }
-            await self.send(text_data=json.dumps({
+
+            message_data = {
+                'id': msg.id,
                 'message': msg.message,
                 'sender': msg.sender.phone,
                 'receiver': msg.receiver.phone,
                 'timestamp': msg.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
-                'reply_to': reply_to_data  # اطلاعات پیام مرجع
-            }))
+                'status': msg.status,
+                'reply_to': reply_to_data
+            }
+            await self.send(text_data=json.dumps(message_data))
+
+            # Notify group
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'chat_message',
+                    'id': msg.id,
+                    'message': msg.message,
+                    'sender': msg.sender.phone,
+                    'receiver': msg.receiver.phone,
+                    'timestamp': msg.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                    'status': msg.status,
+                    'reply_to': reply_to_data
+                }
+            )
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
         logger.info(f"WebSocket disconnected: {self.room_group_name}")
 
     async def receive(self, text_data):
-        logger.info(f"Received message: {text_data}")
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
         sender_phone = text_data_json['sender']
         receiver_phone = text_data_json['receiver']
-        reply_to_message = text_data_json.get('reply_to')  # پیام مرجع (اختیاری)
+        status = text_data_json.get('status', 'SENT')
+        reply_to_id = text_data_json.get('reply_to_id')
 
-        # Fetch sender and receiver users
+        # Fetch sender and receiver asynchronously
         sender_user = await sync_to_async(
             lambda: OTP.objects.filter(phone=sender_phone).first()
         )()
@@ -66,60 +87,64 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )()
 
         if not sender_user or not receiver_user:
-            logger.error(f"Sender or receiver does not exist. Sender: {sender_phone}, Receiver: {receiver_phone}")
-            await self.send(text_data=json.dumps({
-                'error': 'Sender or receiver does not exist.'
-            }))
+            await self.send(text_data=json.dumps({'error': 'Sender or receiver does not exist.'}))
             return
 
-        # Find the message being replied to (if any)
+        # Fetch reply_to message if provided
         reply_to = None
-        if reply_to_message:
+        if reply_to_id:
             reply_to = await sync_to_async(
-                lambda: ChatMessage.objects.filter(
-                    sender__phone__in=[self.sender, self.receiver],
-                    receiver__phone__in=[self.sender, self.receiver],
-                    message=reply_to_message
-                ).first()
+                lambda: ChatMessage.objects.filter(id=reply_to_id).select_related('sender').first()
             )()
 
-        # Save the new message
+        # Create new message
         chat_message = await sync_to_async(
             lambda: ChatMessage.objects.create(
                 sender=sender_user,
                 receiver=receiver_user,
                 message=message,
+                status=status,
                 reply_to=reply_to
             )
         )()
 
-        # Prepare reply_to data for sending
+        # Fetch the created message with related fields to avoid synchronous calls
+        chat_message = await sync_to_async(
+            lambda: ChatMessage.objects.select_related('sender', 'receiver', 'reply_to', 'reply_to__sender').get(id=chat_message.id)
+        )()
+
+        # Prepare reply_to data
         reply_to_data = None
         if chat_message.reply_to:
             reply_to_data = {
+                'id': chat_message.reply_to.id,
                 'message': chat_message.reply_to.message,
-                'sender': chat_message.reply_to.sender.phone,
+                'sender': chat_message.reply_to.sender.phone if chat_message.reply_to.sender else None,
                 'timestamp': chat_message.reply_to.timestamp.strftime('%Y-%m-%d %H:%M:%S')
             }
 
-        # Broadcast the message to the group
+        # Broadcast message to group
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 'type': 'chat_message',
+                'id': chat_message.id,
                 'message': chat_message.message,
                 'sender': sender_phone,
                 'receiver': receiver_phone,
                 'timestamp': chat_message.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                'status': chat_message.status,
                 'reply_to': reply_to_data
             }
         )
 
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
+            'id': event['id'],
             'message': event['message'],
             'sender': event['sender'],
             'receiver': event['receiver'],
             'timestamp': event['timestamp'],
+            'status': event['status'],
             'reply_to': event['reply_to']
         }))
