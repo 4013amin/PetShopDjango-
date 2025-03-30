@@ -303,3 +303,18 @@ class ChatUsersView(APIView):
         except Exception as e:
             logger.error(f"Error fetching chat users: {str(e)}")
             return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+class Chat_DelelteView(APIView):
+    def delete(self , request , sender , receiver):
+        ChatMessage.objects.filter(
+             sender__phone=sender,
+            receiver__phone=receiver
+        ).delete()
+        
+        ChatMessage.objects.filter(
+            sender__phone=receiver,
+            receiver__phone=sender
+        ).delete()
+        return Response({'message': 'Chat deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+        

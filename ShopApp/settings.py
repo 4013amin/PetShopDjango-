@@ -29,6 +29,8 @@ ALLOWED_HOSTS = ["192.168.1.110"]
 CSRF_TRUSTED_ORIGINS = ["http://192.168.1.110:2020"]
 
 
+APPEND_SLASH = False
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',

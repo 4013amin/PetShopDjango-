@@ -8,16 +8,21 @@ logger = logging.getLogger(__name__)
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        # دریافت شماره‌های فرستنده و گیرنده از URL
         self.sender = self.scope['url_route']['kwargs']['sender']
         self.receiver = self.scope['url_route']['kwargs']['receiver']
+        # مرتب‌سازی برای ایجاد نام گروه منحصربه‌فرد
         sorted_users = sorted([self.sender, self.receiver])
         self.room_group_name = f"chat_{sorted_users[0]}_{sorted_users[1]}"
 
+        # لاگ اتصال
         logger.info(f"WebSocket connecting: {self.scope['path']}")
+        # اضافه کردن کانال به گروه
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        # پذیرش اتصال WebSocket
         await self.accept()
 
-        # Fetch messages with related fields asynchronously
+        # دریافت پیام‌های قبلی به‌صورت غیرهمزمان
         messages = await sync_to_async(
             lambda: list(ChatMessage.objects.filter(
                 sender__phone__in=[self.sender, self.receiver],
@@ -25,14 +30,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
             ).select_related('sender', 'receiver', 'reply_to', 'reply_to__sender'))
         )()
 
-        # Process and send messages
+        # پردازش و ارسال پیام‌ها
         for msg in messages:
+            # به‌روزرسانی وضعیت پیام به SEEN اگر گیرنده آن را ندیده باشد
             if self.receiver == msg.receiver.phone and msg.status != 'SEEN':
                 msg.status = 'SEEN'
                 await sync_to_async(msg.save)()
 
+            # آماده‌سازی داده‌های پیام پاسخ‌داده‌شده (reply_to)
             reply_to_data = None
-            if msg.reply_to:  # Check if reply_to exists
+            if msg.reply_to:
                 reply_to_data = {
                     'id': msg.reply_to.id,
                     'message': msg.reply_to.message,
@@ -40,6 +47,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'timestamp': msg.reply_to.timestamp.strftime('%Y-%m-%d %H:%M:%S')
                 }
 
+            # ساختار داده پیام برای ارسال
             message_data = {
                 'id': msg.id,
                 'message': msg.message,
@@ -49,9 +57,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'status': msg.status,
                 'reply_to': reply_to_data
             }
+            # ارسال پیام به کلاینت
             await self.send(text_data=json.dumps(message_data))
 
-            # Notify group
+            # ارسال پیام به گروه برای اطلاع‌رسانی به همه کاربران
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
@@ -67,18 +76,50 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
 
     async def disconnect(self, close_code):
+        # حذف کانال از گروه هنگام قطع اتصال
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
         logger.info(f"WebSocket disconnected: {self.room_group_name}")
 
     async def receive(self, text_data):
+        # دریافت و پردازش داده‌های ارسالی از کلاینت
         text_data_json = json.loads(text_data)
+        
+        # بررسی اینکه آیا درخواست حذف چت است یا ارسال پیام جدید
+        action = text_data_json.get('action')
+        
+        if action == 'delete_chat':
+            sender_phone = text_data_json['sender']
+            receiver_phone = text_data_json['receiver']
+            
+            # حذف تمام پیام‌های بین فرستنده و گیرنده
+            await sync_to_async(ChatMessage.objects.filter(
+                sender__phone=sender_phone,
+                receiver__phone=receiver_phone
+            ).delete)()
+            await sync_to_async(ChatMessage.objects.filter(
+                sender__phone=receiver_phone,
+                receiver__phone=sender_phone
+            ).delete)()
+
+            # اطلاع‌رسانی به گروه درباره حذف چت
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'chat_deleted',
+                    'sender': sender_phone,
+                    'receiver': receiver_phone
+                }
+            )
+            return
+
+        # اگر درخواست پیام جدید باشد
         message = text_data_json['message']
         sender_phone = text_data_json['sender']
         receiver_phone = text_data_json['receiver']
         status = text_data_json.get('status', 'SENT')
         reply_to_id = text_data_json.get('reply_to_id')
 
-        # Fetch sender and receiver asynchronously
+        # دریافت اطلاعات فرستنده و گیرنده
         sender_user = await sync_to_async(
             lambda: OTP.objects.filter(phone=sender_phone).first()
         )()
@@ -86,18 +127,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
             lambda: OTP.objects.filter(phone=receiver_phone).first()
         )()
 
+        # بررسی وجود فرستنده و گیرنده
         if not sender_user or not receiver_user:
             await self.send(text_data=json.dumps({'error': 'Sender or receiver does not exist.'}))
             return
 
-        # Fetch reply_to message if provided
+        # دریافت پیام پاسخ‌داده‌شده (reply_to) در صورت وجود
         reply_to = None
         if reply_to_id:
             reply_to = await sync_to_async(
                 lambda: ChatMessage.objects.filter(id=reply_to_id).select_related('sender').first()
             )()
 
-        # Create new message
+        # ایجاد پیام جدید
         chat_message = await sync_to_async(
             lambda: ChatMessage.objects.create(
                 sender=sender_user,
@@ -108,12 +150,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
         )()
 
-        # Fetch the created message with related fields to avoid synchronous calls
+        # دریافت پیام ایجادشده با اطلاعات مرتبط
         chat_message = await sync_to_async(
             lambda: ChatMessage.objects.select_related('sender', 'receiver', 'reply_to', 'reply_to__sender').get(id=chat_message.id)
         )()
 
-        # Prepare reply_to data
+        # آماده‌سازی داده‌های reply_to
         reply_to_data = None
         if chat_message.reply_to:
             reply_to_data = {
@@ -123,7 +165,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'timestamp': chat_message.reply_to.timestamp.strftime('%Y-%m-%d %H:%M:%S')
             }
 
-        # Broadcast message to group
+        # ارسال پیام به گروه
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -138,6 +180,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }
         )
 
+    # هندل کردن پیام‌های جدید
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
             'id': event['id'],
@@ -147,4 +190,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'timestamp': event['timestamp'],
             'status': event['status'],
             'reply_to': event['reply_to']
+        }))
+
+    # هندل کردن حذف چت
+    async def chat_deleted(self, event):
+        await self.send(text_data=json.dumps({
+            'action': 'chat_deleted',
+            'sender': event['sender'],
+            'receiver': event['receiver']
         }))
