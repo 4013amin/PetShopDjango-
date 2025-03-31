@@ -23,11 +23,17 @@ class GetProductsView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+
 class GetProductByIdView(APIView):
-    def get(self, request, pk):
-        product = Product.objects.get(pk=pk)
-        serializer = ProductSerializer(product)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def get(self, _, pk):
+        logger.info(f"درخواست برای محصول با آیدی {pk} دریافت شد")
+        try:
+            product = Product.objects.get(pk=pk)
+            serializer = ProductSerializer(product)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Product.DoesNotExist:
+            logger.warning(f"محصول با آیدی {pk} پیدا نشد.")
+        return Response({"error": f"محصول با آیدی {pk} پیدا نشد."}, status=status.HTTP_404_NOT_FOUND)
 
 
 class GetCategoriesView(APIView):

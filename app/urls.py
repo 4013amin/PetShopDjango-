@@ -23,7 +23,7 @@ schema_view = get_schema_view(
 
 urlpatterns = [
                   path('getallProduct/', views.GetProductsView.as_view()),
-                  path('products/<int:pk>/', views.GetProductByIdView.as_view()),
+                  path('products/<int:pk>/', views.GetProductByIdView.as_view(), name='get-product-by-id'),
                   path('GetCategories/', views.GetCategoriesView.as_view()),
                   path('user-products/', views.UserProductsView.as_view(), name="user-products"),
                   path('profile/', views.ProfileView.as_view()),
@@ -36,7 +36,7 @@ urlpatterns = [
                   
                   path('api/chat_users/', views.ChatUsersView.as_view(), name='chat_users'),
                 
-                 path('chat/<str:sender>/<str:receiver>/', views.Chat_DelelteView.as_view(), name='chat-delete'),
-
+                  path('chat/<str:sender>/<str:receiver>/', views.Chat_DelelteView.as_view(), name='chat-delete'),
+                 
               
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
