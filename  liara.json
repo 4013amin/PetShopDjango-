@@ -3,5 +3,16 @@
   "port": 80,
   "build": {
     "location": "iran"
-  }
+  },
+  "command": "daphne -b 0.0.0.0 -p 80 ShopApp.asgi:application",
+  "disks": [
+    {
+      "name": "media",
+      "mountTo": "/usr/src/app/media"
+    },
+    {
+      "name": "data",
+      "mountTo": "/usr/src/app/data"
+    }
+  ]
 }

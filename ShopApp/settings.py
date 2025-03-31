@@ -25,8 +25,11 @@ SECRET_KEY = 'django-insecure-4&mbyf!i-ae)5(#%8jzm9a0i_46u9q5=xz(mfzxvw*%pnt7&el
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["192.168.1.110"]
-CSRF_TRUSTED_ORIGINS = ["http://192.168.1.110:2020"]
+ALLOWED_HOSTS = ['petshopdjango.liara.run', '127.0.0.1', '192.168.1.110']
+CSRF_TRUSTED_ORIGINS = [
+    'http://192.168.1.110:2020', 
+    'https://petshopdjango.liara.run',
+]
 
 
 APPEND_SLASH = True
@@ -79,7 +82,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [os.getenv('REDIS_URL', 'redis://127.0.0.1:6379')],
         },
     },
 }
