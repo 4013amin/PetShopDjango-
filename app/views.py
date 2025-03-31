@@ -26,7 +26,6 @@ class GetProductsView(APIView):
 
 class GetProductByIdView(APIView):
     def get(self, _, pk):
-        logger.info(f"درخواست برای محصول با آیدی {pk} دریافت شد")
         try:
             product = Product.objects.get(pk=pk)
             serializer = ProductSerializer(product)
