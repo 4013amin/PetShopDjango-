@@ -1,18 +1,18 @@
 {
   "app": "petshopdjango",
-  "port": 80,
+  "port": 8000,
   "build": {
     "location": "iran"
   },
-  "command": "daphne -b 0.0.0.0 -p 80 ShopApp.asgi:application",
+  "command": "daphne -b 0.0.0.0 -p 8000 ShopApp.asgi:application",
   "disks": [
     {
       "name": "media",
-      "mountTo": "/usr/src/app/media"
+      "mountTo": "/usr/src/media"
     },
     {
       "name": "data",
-      "mountTo": "/usr/src/app/data"
+      "mountTo": "/usr/src/data"
     }
   ]
 }
