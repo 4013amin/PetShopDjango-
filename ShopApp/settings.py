@@ -25,6 +25,7 @@ SECRET_KEY = 'django-insecure-4&mbyf!i-ae)5(#%8jzm9a0i_46u9q5=xz(mfzxvw*%pnt7&el
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+
 ALLOWED_HOSTS = ['petshopdjango.liara.run', '127.0.0.1', '192.168.1.110']
 CSRF_TRUSTED_ORIGINS = [
     'http://192.168.1.110:2020', 
@@ -75,7 +76,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'ShopApp.wsgi.application'
+# WSGI_APPLICATION = 'ShopApp.wsgi.application'
 ASGI_APPLICATION = 'ShopApp.asgi.application'
 
 CHANNEL_LAYERS = {
