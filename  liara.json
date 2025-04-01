@@ -8,11 +8,11 @@
   "disks": [
     {
       "name": "media",
-      "mountTo": "/usr/src/media"
+      "mountTo": "/usr/src/app/media"
     },
     {
       "name": "data",
-      "mountTo": "/usr/src/data"
+      "mountTo": "/usr/src/app/data"
     }
   ]
 }
