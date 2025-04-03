@@ -8,11 +8,18 @@
   "disks": [
     {
       "name": "media",
-      "mountTo": "/usr/src/media"
+      "mountTo": "/media"
     },
     {
       "name": "data",
-      "mountTo": "/usr/src/data"
+      "mountTo": "/data"
     }
-  ]
+  ],
+  "environment": {
+    "DJANGO_DEBUG": "False",
+    "DJANGO_SECRET_KEY": "your-secure-secret-key-here",
+    "REDIS_HOST": "redis-1234.liara.run",   
+    "REDIS_PORT": "6379",                     
+    "REDIS_PASSWORD": "your-redis-password" 
+  }
 }

@@ -20,8 +20,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-4&mbyf!i-ae)5(#%8jzm9a0i_46u9q5=xz(mfzxvw*%pnt7&el'
+# SECRET_KEY = 'django-insecure-4&mbyf!i-ae)5(#%8jzm9a0i_46u9q5=xz(mfzxvw*%pnt7&el'
 
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-4&mbyf!i-ae)5(#%8jzm9a0i_46u9q5=xz(mfzxvw*%pnt7&el')
+DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -78,11 +80,23 @@ TEMPLATES = [
 # WSGI_APPLICATION = 'ShopApp.wsgi.application'
 ASGI_APPLICATION = 'ShopApp.asgi.application'
 
+# تنظیمات Redis با استفاده از متغیرهای محیطی
+REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
+
+# تنظیم URL اتصال به Redis
+if REDIS_PASSWORD:
+    REDIS_URL = f'redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}'
+else:
+    REDIS_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}'
+    
+print(f"Connecting to Redis at: {REDIS_URL}")
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [os.getenv('REDIS_URL', 'redis://127.0.0.1:6379')],
+            "hosts": [REDIS_URL],
         },
     },
 }
