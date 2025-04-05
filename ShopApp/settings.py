@@ -27,7 +27,8 @@ DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['petshopdjango.liara.run', '127.0.0.1', '192.168.1.110']
+# ALLOWED_HOSTS = ['petshopdjango.liara.run', '127.0.0.1', '192.168.1.110' , '192.168.121.101']
+ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
     'http://192.168.1.110:2020', 
     'https://petshopdjango.liara.run',
@@ -80,18 +81,15 @@ TEMPLATES = [
 # WSGI_APPLICATION = 'ShopApp.wsgi.application'
 ASGI_APPLICATION = 'ShopApp.asgi.application'
 
-# تنظیمات Redis با استفاده از متغیرهای محیطی
 REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
 
-# تنظیم URL اتصال به Redis
 if REDIS_PASSWORD:
     REDIS_URL = f'redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}'
 else:
     REDIS_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}'
-    
-print(f"Connecting to Redis at: {REDIS_URL}")
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
@@ -104,15 +102,11 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
-
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [REDIS_URL],
-        },
-    },
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 # Password validation

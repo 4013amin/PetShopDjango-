@@ -1,48 +1,25 @@
 {
-  "version": 1,
-  "plan": "standard",
-  "framework": "django",
-  "disk": {
-    "name": "data",
-    "mount": "/data"
-  },
+  "app": "petshopdjango",
+  "port": 8000,
   "build": {
-    "use": "python3",
-    "commands": [
-      "pip install -r requirements.txt",
-      "python manage.py collectstatic --noinput",
-      "python manage.py migrate"
-    ]
+    "location": "iran"
   },
-  "env": {
-    "DJANGO_SECRET_KEY": {
-      "generator": "secret"
+  "command": "daphne -b 0.0.0.0 -p 8000 ShopApp.asgi:application",
+  "disks": [
+    {
+      "name": "media",
+      "mountTo": "/media"
     },
+    {
+      "name": "data",
+      "mountTo": "/data"
+    }
+  ],
+  "environment": {
     "DJANGO_DEBUG": "False",
-    "REDIS_HOST": "redis",
+    "DJANGO_SECRET_KEY": "your-secure-secret-key-here",
+    "REDIS_HOST": "redis-1234.liara.run",
     "REDIS_PORT": "6379",
-    "REDIS_URL": "redis://redis:6379/0"
-  },
-  "services": {
-    "redis": {
-      "image": "redis:alpine",
-      "disk": "data"
-    }
-  },
-  "web": {
-    "command": "gunicorn ShopApp.wsgi --bind 0.0.0.0:$PORT --workers 3",
-    "port": 8000
-  },
-  "worker": {
-    "command": "daphne ShopApp.asgi:application --port $PORT --bind 0.0.0.0",
-    "port": 8000
-  },
-  "mounts": {
-    "/static": {
-      "path": "staticfiles"
-    },
-    "/media": {
-      "path": "media"
-    }
+    "REDIS_PASSWORD": "your-redis-password"
   }
 }
