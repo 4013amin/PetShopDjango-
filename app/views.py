@@ -11,7 +11,9 @@ import logging
 from rest_framework.parsers import MultiPartParser, FormParser
 import requests
 from rest_framework.parsers import JSONParser
-
+from google.cloud import vision
+import io
+import os
 logger = logging.getLogger(__name__)
 
 
@@ -40,6 +42,35 @@ class GetCategoriesView(APIView):
         categories = Category.objects.all()
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+# تنظیم کلاینت Google Vision (نیاز به کلید API و نصب پکیج google-cloud-vision)
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "path_to_your_service_account_key.json"
+vision_client = vision.ImageAnnotatorClient()
+
+def is_pet_related_image(image_file):
+    """تابع بررسی محتوای تصویر برای تشخیص پت یا ابزار مرتبط"""
+    # خواندن محتوای تصویر
+    content = image_file.read()
+    image = vision.Image(content=content)
+
+    # درخواست برچسب‌گذاری تصویر از Google Vision
+    response = vision_client.label_detection(image=image)
+    labels = response.label_annotations
+
+    # کلمات کلیدی مرتبط با پت و ابزارها
+    pet_related_keywords = [
+        "dog", "cat", "pet", "animal", "puppy", "kitten", "bird", "fish",
+        "leash", "collar", "pet food", "cage", "aquarium", "toy"
+    ]
+
+    # بررسی برچسب‌ها
+    for label in labels:
+        if label.description.lower() in pet_related_keywords:
+            return True
+    
+    return False
 
 
 class AddProductView(APIView):

@@ -6,6 +6,7 @@ autobahn==24.4.2
 Automat==24.8.1
 beautifulsoup4==4.13.3
 blinker==1.9.0
+cachetools==5.5.2
 certifi==2025.1.31
 cffi==1.17.1
 channels==4.2.0
@@ -27,8 +28,13 @@ flask-cors==5.0.1
 flatbuffers==25.2.10
 gast==0.6.0
 gdown==5.2.0
+google-api-core==2.24.2
+google-auth==2.38.0
+google-cloud-vision==3.10.1
 google-pasta==0.2.0
-grpcio==1.71.0
+googleapis-common-protos==1.69.2
+grpcio==1.72.0rc1
+grpcio-status==1.72.0rc1
 gunicorn==23.0.0
 h5py==3.13.0
 hyperlink==21.0.0
@@ -56,7 +62,8 @@ optree==0.14.1
 packaging==24.2
 pandas==2.2.3
 pillow==11.1.0
-protobuf==5.29.4
+proto-plus==1.26.1
+protobuf==6.30.2
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
 pycparser==2.22
@@ -70,6 +77,9 @@ redis==5.2.1
 requests==2.32.3
 retina-face==0.0.17
 rich==13.9.4
+rsa==4.9
+scikit-learn==1.6.1
+scipy==1.15.2
 service-identity==24.2.0
 six==1.17.0
 soupsieve==2.6
@@ -79,6 +89,7 @@ tensorboard-data-server==0.7.2
 tensorflow==2.19.0
 tensorflow-io-gcs-filesystem==0.37.1
 termcolor==2.5.0
+threadpoolctl==3.6.0
 tqdm==4.67.1
 Twisted==24.11.0
 txaio==23.1.1
