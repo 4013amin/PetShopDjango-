@@ -51,9 +51,6 @@ INSTALLED_APPS = [
     'drf_yasg',
 ]
 
-FILE_UPLOAD_HANDLERS = [
-    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
-]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
