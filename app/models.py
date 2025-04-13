@@ -52,10 +52,11 @@ class Profile(models.Model):
     user = models.OneToOneField(OTP, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     image = models.ImageField(upload_to='media/', blank=True, null=True)
-    gender = models.CharField(max_length=10, choices=[('male', 'مرد'), ('female', 'زن')], null=True, blank=True)
+    # gender = models.CharField(max_length=10, choices=[('male', 'مرد'), ('female', 'زن')], null=True, blank=True)
     bio = models.TextField(blank=True, null=True)
     address = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    phone = models.CharField(max_length=11 , null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):

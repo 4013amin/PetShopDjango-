@@ -242,22 +242,35 @@ def verify_otp(request):
 
 
 class ProfileView(APIView):
-    parser_classes = [JSONParser]
-    parser_classes = (MultiPartParser, FormParser) 
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+
     def get(self, request):
         phone = request.query_params.get('phone')
 
         if not phone:
-            return Response({"error": "Phone number is required."}, status=status.HTTP_400_BAD_REQUEST)
-        
-       
+            return Response(
+                {"error": "Phone number is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         try:
             user = OTP.objects.get(phone=phone)
             profile = Profile.objects.get_or_create(user=user)[0]
             serializer = ProfileSerializer(profile)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            # شمارش تعداد کل کاربران
+            total_users = OTP.objects.count()
+
+            # اضافه کردن تعداد کاربران به پاسخ
+            response_data = serializer.data
+            response_data['total_users'] = total_users
+
+            return Response(response_data, status=status.HTTP_200_OK)
         except OTP.DoesNotExist:
-            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "User not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
     def put(self , request):
         phone = request.query_params.get('phone')
@@ -272,7 +285,6 @@ class ProfileView(APIView):
             if not profile.name and not profile.image:
                 profile.name = request.data.get('name', profile.name)
                 profile.image = request.FILES.get('image', profile.image)
-                profile.gender = request.data.get('gender' , profile.gender)
                 profile.bio = request.data.get('bio' , profile.bio)
                 profile.address = request.data.get('address' , profile.address)
                 profile.save()
