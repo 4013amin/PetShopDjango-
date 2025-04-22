@@ -74,6 +74,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'reply_to': reply_to_data
                 }
             )
+            
 
     async def disconnect(self, close_code):
         # حذف کانال از گروه هنگام قطع اتصال
@@ -179,6 +180,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'reply_to': reply_to_data
             }
         )
+        
+        if self.receive == receiver_phone :
+            await self.send(text_data= json.dump({
+                'type' : 'notification',
+                'title': 'پیام جدید',
+                'body': f"پیام جدید از {sender_phone}: {message}"
+            }))
 
     # هندل کردن پیام‌های جدید
     async def chat_message(self, event):
