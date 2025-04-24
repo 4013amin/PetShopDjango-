@@ -1,10 +1,10 @@
 {
   "app": "petshopdjango",
-  "port": 8000,
+  "port": 2020, 
   "build": {
     "location": "iran"
   },
-  "command": "daphne -b 0.0.0.0 -p 8000 ShopApp.asgi:application",
+  "command": "daphne -b 0.0.0.0 -p 2020 ShopApp.asgi:application", 
   "disks": [
     {
       "name": "media",
@@ -19,5 +19,5 @@
     "DJANGO_DEBUG": "False",
     "REDIS_HOST": "redis-1234.liara.run",
     "REDIS_PORT": "6379"
-}
+  }
 }
