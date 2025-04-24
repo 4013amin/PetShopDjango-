@@ -19,5 +19,5 @@
     "DJANGO_DEBUG": "False",
     "REDIS_HOST": "redis-1234.liara.run",
     "REDIS_PORT": "6379"
-  }
+}
 }
