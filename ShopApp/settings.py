@@ -82,29 +82,16 @@ TEMPLATES = [
 # WSGI_APPLICATION = 'ShopApp.wsgi.application'
 ASGI_APPLICATION = 'ShopApp.asgi.application'
 
-REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
-REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
-
-if REDIS_PASSWORD:
-    REDIS_URL = f'redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}'
-else:
-    REDIS_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}'
-
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [(REDIS_URL,)],
-        },
-    },
-}
     
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("redis-1234.liara.run", 6379)],
+            "hosts": [{
+                "host": "petshopdjangosql",
+                "port": 6379,
+                "password": "rO6gfvqmfPnSGUa3XmqGn7b2",
+            }],
         },
     },
 }
