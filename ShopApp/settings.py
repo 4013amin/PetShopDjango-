@@ -30,10 +30,9 @@ DEBUG = True
 # ALLOWED_HOSTS = ['petshopdjango.liara.run', '127.0.0.1', '192.168.1.110' , '192.168.121.101']
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
-    'http://192.168.1.110:2020', 
+    'http://192.168.1.110:2020',
     'https://petshopdjango.liara.run',
 ]
-
 
 APPEND_SLASH = True
 
@@ -50,7 +49,6 @@ INSTALLED_APPS = [
     'channels',
     'drf_yasg',
 ]
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -82,7 +80,6 @@ TEMPLATES = [
 # WSGI_APPLICATION = 'ShopApp.wsgi.application'
 ASGI_APPLICATION = 'ShopApp.asgi.application'
 
-    
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
