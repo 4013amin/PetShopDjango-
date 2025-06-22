@@ -3,6 +3,7 @@ from .models import Product, Category, OTP, ProductImage, Profile , ChatMessage
 
 
 # Register your models here.
+
 @admin.register(Product)
 class PostAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'description', 'price')
