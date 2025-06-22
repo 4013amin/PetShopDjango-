@@ -14,8 +14,12 @@ from rest_framework.parsers import JSONParser
 from google.cloud import vision
 import io
 import os
-logger = logging.getLogger(__name__)
 
+#SMS OTP
+OTP_EXPIRATION_TIME = 2 * 60
+SMS_IR_API_KEY = "fTisg3oGV8mUzxnKhr9a81XpbbTekqsa7Y2YYwdZ5S1X7GDi"
+
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 class GetProductsView(APIView):
@@ -44,33 +48,32 @@ class GetCategoriesView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "path_to_your_key.json"
 
-# # تنظیم کلاینت Google Vision (نیاز به کلید API و نصب پکیج google-cloud-vision)
-# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "path_to_your_service_account_key.json"
-# vision_client = vision.ImageAnnotatorClient()
+def is_pet_related_text(text):
+    pet_keywords = [
+        "سگ", "گربه", "پت", "حیوان", "ماهی", "پرنده", "خرگوش", "آکواریوم", "قلاده", "اسباب‌بازی", "بستر", "غذای حیوانات"
+    ]
+    text_lower = text.lower()
+    return any(keyword in text_lower for keyword in pet_keywords)
 
-# def is_pet_related_image(image_file):
-#     """تابع بررسی محتوای تصویر برای تشخیص پت یا ابزار مرتبط"""
-#     # خواندن محتوای تصویر
-#     content = image_file.read()
-#     image = vision.Image(content=content)
 
-#     # درخواست برچسب‌گذاری تصویر از Google Vision
-#     response = vision_client.label_detection(image=image)
-#     labels = response.label_annotations
+def is_pet_related_image(image_file):
+    vision_client = vision.ImageAnnotatorClient()
+    content = image_file.read()
+    image = vision.Image(content=content)
 
-#     # کلمات کلیدی مرتبط با پت و ابزارها
-#     pet_related_keywords = [
-#         "dog", "cat", "pet", "animal", "puppy", "kitten", "bird", "fish",
-#         "leash", "collar", "pet food", "cage", "aquarium", "toy"
-#     ]
+    response = vision_client.label_detection(image=image)
+    labels = response.label_annotations
 
-#     # بررسی برچسب‌ها
-#     for label in labels:
-#         if label.description.lower() in pet_related_keywords:
-#             return True
-    
-#     return False
+    pet_keywords = {
+        "dog", "cat", "puppy", "kitten", "animal", "pet", "bird", "fish", "hamster", "leash", "cage", "aquarium", "parrot", "rabbit"
+    }
+
+    for label in labels:
+        if label.description.lower() in pet_keywords:
+            return True
+    return False
 
 
 class AddProductView(APIView):
@@ -83,22 +86,38 @@ class AddProductView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        phone = request.data.get('phone')  # فرض می‌کنیم شماره تلفن کاربر ارسال می‌شود
+        phone = request.data.get('phone')
+        if not phone:
+            return Response({"error": "Phone number is required."}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             user = OTP.objects.get(phone=phone)
         except OTP.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
+        title = request.data.get('title', '')
+        description = request.data.get('description', '')
+
+        full_text = f"{title} {description}"
+        if not is_pet_related_text(full_text):
+            return Response({"error": "Product content must be related to pets."}, status=status.HTTP_400_BAD_REQUEST)
+
+        for image in images:
+            image.seek(0)
+            if not is_pet_related_image(image):
+                return Response({"error": "Uploaded image is not related to pets."}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
             product = serializer.save(user=user)
-
             for image in images:
+                image.seek(0)
                 ProductImage.objects.create(product=product, image=image)
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class UserProductsView(APIView):
@@ -140,15 +159,12 @@ class UserProductsView(APIView):
         return Response({"message": "Product deleted."}, status=status.HTTP_200_OK)
 
 
-OTP_EXPIRATION_TIME = 2 * 60
-SMS_IR_API_KEY = "fTisg3oGV8mUzxnKhr9a81XpbbTekqsa7Y2YYwdZ5S1X7GDi"
 
 
 def generate_otp():
     return random.randint(10000, 99999)
 
 
-# ارسال پیامک از طریق SMS.ir
 def send_sms_ir(phone_number, otp):
     url = "https://api.sms.ir/v1/send/verify"
     headers = {
@@ -177,14 +193,12 @@ def send_otp(request):
         if not phone_number:
             return JsonResponse({'status': 'error', 'message': 'Phone number is required.'}, status=400)
 
-        # بررسی اینکه آیا شماره تلفن قبلاً ثبت‌نام کرده است یا خیر
         otp_entry = OTP.objects.filter(phone=phone_number).first()
 
         if otp_entry:
-            # شماره تلفن قبلاً موجود است، فقط کد جدید ارسال می‌کنیم
             otp = generate_otp()
-            otp_entry.otp = otp  # کد جدید را به OTP قبلی نسبت می‌دهیم
-            otp_entry.is_valid = True  # دوباره کد را معتبر می‌کنیم
+            otp_entry.otp = otp
+            otp_entry.is_valid = True
             otp_entry.save()
 
             print(f"OTP for {phone_number}: {otp}")
@@ -194,7 +208,6 @@ def send_otp(request):
             except Exception as e:
                 return JsonResponse({'status': 'error', 'message': f"Error sending OTP: {str(e)}"}, status=500)
         else:
-            # اگر شماره تلفن وجود نداشت، OTP جدید را ایجاد کرده و ذخیره می‌کنیم
             otp = generate_otp()
             OTP.objects.create(phone=phone_number, otp=otp, is_valid=True)
 
@@ -214,19 +227,15 @@ def verify_otp(request):
         phone = request.POST.get('phone')
         otp = request.POST.get('otp')
 
-        # بررسی اینکه شماره تلفن و OTP وارد شده‌اند
         if not phone or not otp:
             return JsonResponse({'error': 'Phone number and OTP are required'}, status=400)
 
         try:
             print(f"Verifying OTP for phone: {phone}, OTP: {otp}")
 
-            # تلاش برای پیدا کردن OTP مربوطه در پایگاه داده
             otp_entry = OTP.objects.get(phone=phone, otp=otp, is_valid=True)
 
-            # بررسی اعتبار کد OTP
             if otp_entry.is_valid:
-                # ایجاد یا بازیابی پروفایل کاربر
                 profile, created = Profile.objects.get_or_create(user=otp_entry)
                 if created:
                     print(f"New profile created for user: {phone}")
@@ -258,10 +267,8 @@ class ProfileView(APIView):
             profile = Profile.objects.get_or_create(user=user)[0]
             serializer = ProfileSerializer(profile)
             
-            # شمارش تعداد کل کاربران
             total_users = OTP.objects.count()
 
-            # اضافه کردن تعداد کاربران به پاسخ
             response_data = serializer.data
             response_data['total_users'] = total_users
 
