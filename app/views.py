@@ -1,8 +1,8 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from app.models import Product, Category, ProductImage, Profile,ChatMessage
-from app.serializers import ProductSerializer, CategorySerializer, ProfileSerializer,ChatUserSerializer
+from app.models import Product, Category, ProductImage, Profile, ChatMessage
+from app.serializers import ProductSerializer, CategorySerializer, ProfileSerializer, ChatUserSerializer
 import random
 from .models import OTP
 from django.http import JsonResponse
@@ -15,11 +15,12 @@ from google.cloud import vision
 import io
 import os
 
-#SMS OTP
+# SMS OTP
 OTP_EXPIRATION_TIME = 2 * 60
 SMS_IR_API_KEY = "fTisg3oGV8mUzxnKhr9a81XpbbTekqsa7Y2YYwdZ5S1X7GDi"
 
 logger = logging.getLogger(__name__)
+
 
 # Create your views here.
 class GetProductsView(APIView):
@@ -27,7 +28,6 @@ class GetProductsView(APIView):
         products = Product.objects.prefetch_related('images').all()
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 
 class GetProductByIdView(APIView):
@@ -50,6 +50,7 @@ class GetCategoriesView(APIView):
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "path_to_your_key.json"
 
+
 def is_pet_related_text(text):
     pet_keywords = [
         "سگ", "گربه", "پت", "حیوان", "ماهی", "پرنده", "خرگوش", "آکواریوم", "قلاده", "اسباب‌بازی", "بستر", "غذای حیوانات"
@@ -67,7 +68,8 @@ def is_pet_related_image(image_file):
     labels = response.label_annotations
 
     pet_keywords = {
-        "dog", "cat", "puppy", "kitten", "animal", "pet", "bird", "fish", "hamster", "leash", "cage", "aquarium", "parrot", "rabbit"
+        "dog", "cat", "puppy", "kitten", "animal", "pet", "bird", "fish", "hamster", "leash", "cage", "aquarium",
+        "parrot", "rabbit"
     }
 
     for label in labels:
@@ -119,7 +121,6 @@ class AddProductView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class UserProductsView(APIView):
     def get(self, request):
         phone = request.query_params.get('phone')
@@ -157,8 +158,6 @@ class UserProductsView(APIView):
 
         product.delete()
         return Response({"message": "Product deleted."}, status=status.HTTP_200_OK)
-
-
 
 
 def generate_otp():
@@ -266,7 +265,7 @@ class ProfileView(APIView):
             user = OTP.objects.get(phone=phone)
             profile = Profile.objects.get_or_create(user=user)[0]
             serializer = ProfileSerializer(profile)
-            
+
             total_users = OTP.objects.count()
 
             response_data = serializer.data
@@ -279,12 +278,12 @@ class ProfileView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-    def put(self , request):
+    def put(self, request):
         phone = request.query_params.get('phone')
 
-        if not phone :
-             return Response({"error": "This phone is required."}, status=status.HTTP_400_BAD_REQUEST)
-        
+        if not phone:
+            return Response({"error": "This phone is required."}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             user = OTP.objects.get(phone=phone)
             profile = Profile.objects.get_or_create(user=user)[0]
@@ -292,8 +291,8 @@ class ProfileView(APIView):
             if not profile.name and not profile.image:
                 profile.name = request.data.get('name', profile.name)
                 profile.image = request.FILES.get('image', profile.image)
-                profile.bio = request.data.get('bio' , profile.bio)
-                profile.address = request.data.get('address' , profile.address)
+                profile.bio = request.data.get('bio', profile.bio)
+                profile.address = request.data.get('address', profile.address)
                 profile.save()
 
             serializer = ProfileSerializer(profile, data=request.data, partial=True)
@@ -304,7 +303,6 @@ class ProfileView(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except OTP.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-
 
     def delete(self, request):
         phone = request.query_params.get('phone')
@@ -325,8 +323,8 @@ class ProfileView(APIView):
             return Response({"error": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
-
 logger = logging.getLogger(__name__)
+
 
 class ChatUsersView(APIView):
     def get(self, request):
@@ -341,7 +339,7 @@ class ChatUsersView(APIView):
             otp_user = OTP.objects.get(phone=phone)
 
             # دریافت شناسه‌های فرستنده‌هایی که به این کاربر پیام داده‌اند
-            sender_ids = ChatMessage.objects.filter(receiver=otp_user)\
+            sender_ids = ChatMessage.objects.filter(receiver=otp_user) \
                 .values_list('sender_id', flat=True).distinct()
 
             # دریافت شماره تلفن فرستنده‌ها
@@ -358,18 +356,17 @@ class ChatUsersView(APIView):
         except Exception as e:
             logger.error(f"Error fetching chat users: {str(e)}")
             return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        
+
+
 class Chat_DelelteView(APIView):
-    def delete(self , request , sender , receiver):
+    def delete(self, request, sender, receiver):
         ChatMessage.objects.filter(
-             sender__phone=sender,
+            sender__phone=sender,
             receiver__phone=receiver
         ).delete()
-        
+
         ChatMessage.objects.filter(
             sender__phone=receiver,
             receiver__phone=sender
         ).delete()
         return Response({'message': 'Chat deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
-        
