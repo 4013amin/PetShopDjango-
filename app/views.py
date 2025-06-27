@@ -339,14 +339,11 @@ class ChatUsersView(APIView):
         try:
             otp_user = OTP.objects.get(phone=phone)
 
-            # دریافت شناسه‌های فرستنده‌هایی که به این کاربر پیام داده‌اند
             sender_ids = ChatMessage.objects.filter(receiver=otp_user) \
                 .values_list('sender_id', flat=True).distinct()
 
-            # دریافت شماره تلفن فرستنده‌ها
             users = OTP.objects.filter(id__in=sender_ids)
 
-            # سریالایز کردن داده‌ها
             serializer = ChatUserSerializer(users, many=True)
             logger.info(f"Found chat users for phone {phone}: {serializer.data}")
             return Response({'users': serializer.data}, status=status.HTTP_200_OK)
