@@ -88,7 +88,6 @@ class AddProductView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-
         phone = request.data.get('phone')
         if not phone:
             return Response({"error": "Phone number is required."}, status=status.HTTP_400_BAD_REQUEST)
